@@ -57,9 +57,16 @@ flutter run
 האפליקציות מותאמות לריצה בווב באמצעות Flutter Web.
 
 ```bash
-# בניית הפרוייקט לווב
-flutter build web
+# בניית הפרוייקט לווב (אוטומטי עם build.sh)
+./build.sh
+
+# או בנפרד:
+cd user-app && flutter build web --release --base-href /
+cd ../admin-app && flutter build web --release --base-href /admin/
 ```
+
+### פריסה ב-Netlify
+הפרוייקט מגיע עם קבצים סטטיים מוכנים לפריסה. Netlify פשוט יפרוס את הקבצים הקיימים ללא צורך בבניה.
 
 ## 📋 מצב הפרוייקט
 

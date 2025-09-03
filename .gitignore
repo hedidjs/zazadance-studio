@@ -35,8 +35,10 @@ Thumbs.db
 **/.packages
 **/pubspec.lock
 
-# Build outputs
+# Build outputs (except web builds for deployment)
 **/build/
+!user-app/build/web/
+!admin-app/build/web/
 **/dist/
 **/out/
 
