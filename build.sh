@@ -41,7 +41,7 @@ fi
 
 flutter clean
 flutter pub get
-flutter build web --web-renderer canvaskit --release --base-href /
+flutter build web --release --base-href /
 
 if [ $? -eq 0 ]; then
     print_success "User app built successfully!"
@@ -63,7 +63,7 @@ fi
 
 flutter clean
 flutter pub get
-flutter build web --web-renderer canvaskit --release --base-href /admin/
+flutter build web --release --base-href /admin/
 
 if [ $? -eq 0 ]; then
     print_success "Admin app built successfully!"

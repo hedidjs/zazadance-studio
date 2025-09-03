@@ -1,6 +1,6 @@
 [build]
   # Build command for the main user app
-  command = "cd user-app && flutter build web --web-renderer canvaskit --release"
+  command = "cd user-app && flutter build web --release"
   publish = "user-app/build/web"
 
 [build.environment]
@@ -74,10 +74,10 @@
 [context.production]
   command = """
     # Build user app
-    cd user-app && flutter build web --web-renderer canvaskit --release --base-href /
+    cd user-app && flutter build web --release --base-href /
     
     # Build admin app  
-    cd ../admin-app && flutter build web --web-renderer canvaskit --release --base-href /admin/
+    cd ../admin-app && flutter build web --release --base-href /admin/
     
     # Copy admin build to main build
     mkdir -p ../user-app/build/web/admin-build
@@ -88,10 +88,10 @@
 [context.deploy-preview]
   command = """
     # Build user app
-    cd user-app && flutter build web --web-renderer canvaskit --release --base-href /
+    cd user-app && flutter build web --release --base-href /
     
     # Build admin app
-    cd ../admin-app && flutter build web --web-renderer canvaskit --release --base-href /admin/
+    cd ../admin-app && flutter build web --release --base-href /admin/
     
     # Copy admin build to main build
     mkdir -p ../user-app/build/web/admin-build
