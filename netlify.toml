@@ -1,0 +1,100 @@
+[build]
+  # Build command for the main user app
+  command = "cd user-app && flutter build web --web-renderer canvaskit --release"
+  publish = "user-app/build/web"
+
+[build.environment]
+  NODE_VERSION = "18"
+  FLUTTER_VERSION = "3.24.0"
+
+# Redirects and rewrites
+[[redirects]]
+  # Admin panel routing
+  from = "/admin/*"
+  to = "/admin-build/index.html"
+  status = 200
+
+[[redirects]]
+  # Admin panel root
+  from = "/admin"
+  to = "/admin-build/index.html"
+  status = 200
+
+[[redirects]]
+  # Main app SPA routing
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers for Flutter Web
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Cache static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Flutter Web specific headers
+[[headers]]
+  for = "/*.wasm"
+  [headers.values]
+    Content-Type = "application/wasm"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Build hooks for dual app deployment
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+# Context-specific builds
+[context.production]
+  command = """
+    # Build user app
+    cd user-app && flutter build web --web-renderer canvaskit --release --base-href /
+    
+    # Build admin app  
+    cd ../admin-app && flutter build web --web-renderer canvaskit --release --base-href /admin/
+    
+    # Copy admin build to main build
+    mkdir -p ../user-app/build/web/admin-build
+    cp -r build/web/* ../user-app/build/web/admin-build/
+  """
+  publish = "user-app/build/web"
+
+[context.deploy-preview]
+  command = """
+    # Build user app
+    cd user-app && flutter build web --web-renderer canvaskit --release --base-href /
+    
+    # Build admin app
+    cd ../admin-app && flutter build web --web-renderer canvaskit --release --base-href /admin/
+    
+    # Copy admin build to main build
+    mkdir -p ../user-app/build/web/admin-build
+    cp -r build/web/* ../user-app/build/web/admin-build/
+  """
+  publish = "user-app/build/web"

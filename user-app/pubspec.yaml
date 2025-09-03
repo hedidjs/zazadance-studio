@@ -1,0 +1,60 @@
+name: dance_studio_app
+description: ZaZa Dance
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+  
+  # Backend & Database
+  supabase_flutter: ^2.8.0
+  
+  # Navigation
+  go_router: ^14.6.2
+  
+  # UI Components & Styling
+  google_fonts: ^6.2.1
+  cached_network_image: ^3.4.1
+  photo_view: ^0.15.0
+  
+  # Video Player
+  youtube_player_flutter: ^9.1.1
+  
+  # Utilities
+  url_launcher: ^6.3.1
+  share_plus: ^10.0.4
+  image_picker: ^1.0.8
+  visibility_detector: ^0.4.0+2
+  
+  # Icons
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  web:
+    generate: true
+  image_path: "../assets/images/zaza_icon.png"
