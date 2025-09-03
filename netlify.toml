@@ -8,15 +8,9 @@
 
 # Redirects and rewrites
 [[redirects]]
-  # Admin panel routing
+  # Admin panel SPA routing (for all /admin paths)
   from = "/admin/*"
-  to = "/admin-build/index.html"
-  status = 200
-
-[[redirects]]
-  # Admin panel root
-  from = "/admin"
-  to = "/admin-build/index.html"
+  to = "/admin/index.html"
   status = 200
 
 [[redirects]]

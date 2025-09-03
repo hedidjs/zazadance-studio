@@ -77,24 +77,21 @@ cd ..
 # Copy admin build to user app build directory
 print_status "Combining builds..."
 
-# Create admin-build directory in user app
-mkdir -p user-app/build/web/admin-build
+# Create admin directory in user app
+mkdir -p user-app/build/web/admin
 
 # Copy all admin build files
-cp -r admin-app/build/web/* user-app/build/web/admin-build/
-
-# Update admin index.html base href
-sed -i '' 's|<base href="/admin/">|<base href="/admin/">|g' user-app/build/web/admin-build/index.html
+cp -r admin-app/build/web/* user-app/build/web/admin/
 
 print_success "Build process completed successfully!"
 print_status "Build output is in: user-app/build/web/"
 print_status "User app: user-app/build/web/"
-print_status "Admin app: user-app/build/web/admin-build/"
+print_status "Admin app: user-app/build/web/admin/"
 
 # Show build sizes
 print_status "Build sizes:"
 du -sh user-app/build/web/ | awk '{print "Total size: " $1}'
-du -sh user-app/build/web/admin-build/ | awk '{print "Admin app size: " $1}'
+du -sh user-app/build/web/admin/ | awk '{print "Admin app size: " $1}'
 
 echo ""
 print_success "🎉 Ready for deployment to Netlify!"
