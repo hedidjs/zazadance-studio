@@ -1,6 +1,22 @@
 [build]
-  # Build command for the main user app
-  command = "cd user-app && flutter build web --release"
+  # Build command for the main user app with Flutter installation
+  command = """
+    # Install Flutter
+    ./install_flutter.sh
+    
+    # Add Flutter to PATH
+    export PATH="/opt/flutter/bin:$PATH"
+    
+    # Build user app
+    cd user-app && flutter build web --release --base-href /
+    
+    # Build admin app  
+    cd ../admin-app && flutter build web --release --base-href /admin/
+    
+    # Copy admin build to main build
+    mkdir -p ../user-app/build/web/admin-build
+    cp -r build/web/* ../user-app/build/web/admin-build/
+  """
   publish = "user-app/build/web"
 
 [build.environment]
@@ -73,6 +89,12 @@
 # Context-specific builds
 [context.production]
   command = """
+    # Install Flutter
+    ./install_flutter.sh
+    
+    # Add Flutter to PATH
+    export PATH="/opt/flutter/bin:$PATH"
+    
     # Build user app
     cd user-app && flutter build web --release --base-href /
     
@@ -87,6 +109,12 @@
 
 [context.deploy-preview]
   command = """
+    # Install Flutter
+    ./install_flutter.sh
+    
+    # Add Flutter to PATH
+    export PATH="/opt/flutter/bin:$PATH"
+    
     # Build user app
     cd user-app && flutter build web --release --base-href /
     

@@ -26,10 +26,10 @@
 
 ## 🛠 טכנולוגיות
 
-- **Frontend**: Flutter
+- **Frontend**: Flutter 3.24.0+
 - **Backend**: Supabase
-- **Hosting**: Netlify
-- **CI/CD**: GitHub Actions
+- **Hosting**: Netlify (עם התקנה אוטומטית של Flutter)
+- **CI/CD**: GitHub Actions (אוטומטי עם Netlify)
 
 ## 🔧 התקנה ופיתוח
 
@@ -67,10 +67,11 @@ flutter build web
 - בדיקת אופטימיזציה של Supabase Realtime
 - העלאה לגיטהאב
 - הגדרת מבנה הפרוייקט
+- הגדרת פריסה אוטומטית לנטליפיי עם התקנת Flutter
+- תיקון תצורת הבילד
 
 🔄 **בתהליך**:
-- הגדרת פריסה אוטומטית לנטליפיי
-- תיקון בעיות Supabase Realtime
+- תיקון בעיות Supabase Realtime (רשימה מפורטת למטה)
 
 ## 🐛 בעיות ידועות
 
