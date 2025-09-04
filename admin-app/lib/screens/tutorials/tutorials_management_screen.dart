@@ -138,33 +138,40 @@ class _TutorialsManagementScreenState extends ConsumerState<TutorialsManagementS
   }
 
   Widget _buildTutorialsHeader() {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
+      padding: EdgeInsets.all(isMobile ? 8 : 16),
+      child: Column(
         children: [
-          // חיפוש
-          Expanded(
-            child: TextField(
-              decoration: const InputDecoration(
-                labelText: 'חיפוש מדריכים...',
-                prefixIcon: Icon(Icons.search),
+          Row(
+            children: [
+              // חיפוש
+              Expanded(
+                child: TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'חיפוש מדריכים...',
+                    prefixIcon: Icon(Icons.search),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                ),
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
-            ),
+              
+              SizedBox(width: isMobile ? 8 : 16),
+              
+              // כפתור רענון
+              IconButton.outlined(
+                onPressed: _loadData,
+                icon: const Icon(Icons.refresh),
+                tooltip: 'רענון',
+              ),
+            ],
           ),
-          
-          const SizedBox(width: 16),
-          
-          // כפתור רענון
-          IconButton.outlined(
-            onPressed: _loadData,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'רענון',
-          ),
+          if (isMobile) const SizedBox(height: 8),
         ],
       ),
     );
@@ -172,22 +179,23 @@ class _TutorialsManagementScreenState extends ConsumerState<TutorialsManagementS
 
   Widget _buildTutorialsTable() {
     final filteredTutorials = _filteredTutorials;
+    final isMobile = MediaQuery.of(context).size.width < 600;
     
     if (filteredTutorials.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.video_library_outlined,
-              size: 64,
+              size: isMobile ? 48 : 64,
               color: Colors.white54,
             ),
-            SizedBox(height: 16),
+            SizedBox(height: isMobile ? 12 : 16),
             Text(
               'אין מדריכים להצגה',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: isMobile ? 16 : 18,
                 color: Colors.white54,
               ),
             ),
@@ -196,6 +204,14 @@ class _TutorialsManagementScreenState extends ConsumerState<TutorialsManagementS
       );
     }
 
+    if (isMobile) {
+      return _buildTutorialsListView(filteredTutorials);
+    } else {
+      return _buildTutorialsDataTable(filteredTutorials);
+    }
+  }
+
+  Widget _buildTutorialsDataTable(List<Map<String, dynamic>> tutorials) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -229,7 +245,7 @@ class _TutorialsManagementScreenState extends ConsumerState<TutorialsManagementS
               size: ColumnSize.M,
             ),
           ],
-          rows: filteredTutorials.map((tutorial) {
+          rows: tutorials.map((tutorial) {
             return DataRow2(
               cells: [
                 // כותרת
@@ -368,6 +384,159 @@ class _TutorialsManagementScreenState extends ConsumerState<TutorialsManagementS
     );
   }
 
+  Widget _buildTutorialsListView(List<Map<String, dynamic>> tutorials) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      itemCount: tutorials.length,
+      itemBuilder: (context, index) {
+        final tutorial = tutorials[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // כותרת ותיאור
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tutorial['title_he'] ?? 'ללא כותרת',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (tutorial['description_he'] != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        tutorial['description_he'],
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+                
+                const SizedBox(height: 12),
+                
+                // מידע נוסף
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    // קטגוריה
+                    if (tutorial['tutorial_categories'] != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _parseColor(tutorial['tutorial_categories']['color']).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          tutorial['tutorial_categories']['name'] ?? '',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _parseColor(tutorial['tutorial_categories']['color']),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    
+                    // צפיות
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.visibility, size: 16, color: Colors.white70),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${tutorial['views_count'] ?? 0}',
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                    
+                    // לייקים
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.favorite, size: 16, color: Colors.red),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${tutorial['likes_count'] ?? 0}',
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                    
+                    // סטטוס
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: (tutorial['is_active'] == true && tutorial['is_published'] == true)
+                            ? Colors.green.withOpacity(0.2)
+                            : Colors.orange.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        (tutorial['is_active'] == true && tutorial['is_published'] == true) 
+                            ? 'פעיל' 
+                            : 'לא פעיל',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: (tutorial['is_active'] == true && tutorial['is_published'] == true)
+                              ? Colors.green
+                              : Colors.orange,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 12),
+                
+                // כפתורי פעולה
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => _editTutorial(tutorial),
+                      icon: const Icon(Icons.edit_outlined, size: 16),
+                      label: const Text('עריכה'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF00BCD4),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: () => _deleteTutorial(tutorial),
+                      icon: const Icon(Icons.delete_outline, size: 16),
+                      label: const Text('מחיקה'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _showAddTutorialDialog() {
     showDialog(
       context: context,
@@ -496,100 +665,131 @@ class _TutorialsManagementScreenState extends ConsumerState<TutorialsManagementS
 
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
-          childAspectRatio: 1.2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-        ),
-        itemCount: _categories.length,
-        itemBuilder: (context, index) {
-          final category = _categories[index];
-          return _buildCategoryCard(category);
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenWidth = constraints.maxWidth;
+          int crossAxisCount;
+          double childAspectRatio;
+          
+          if (screenWidth < 400) {
+            crossAxisCount = 1;
+            childAspectRatio = 2.0;
+          } else if (screenWidth < 600) {
+            crossAxisCount = 2;
+            childAspectRatio = 1.5;
+          } else if (screenWidth < 900) {
+            crossAxisCount = 3;
+            childAspectRatio = 1.3;
+          } else {
+            crossAxisCount = 4;
+            childAspectRatio = 1.2;
+          }
+          
+          return GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              childAspectRatio: childAspectRatio,
+              crossAxisSpacing: screenWidth < 600 ? 8 : 16,
+              mainAxisSpacing: screenWidth < 600 ? 8 : 16,
+            ),
+            itemCount: _categories.length,
+            itemBuilder: (context, index) {
+              final category = _categories[index];
+              return _buildCategoryCard(category, screenWidth < 600);
+            },
+          );
         },
       ),
     );
   }
 
-  Widget _buildCategoryCard(Map<String, dynamic> category) {
+  Widget _buildCategoryCard(Map<String, dynamic> category, bool isMobile) {
     final color = _parseColor(category['color']);
     
     return Card(
       color: const Color(0xFF1E1E1E),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(isMobile ? 12 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  width: 24,
-                  height: 24,
+                  width: isMobile ? 20 : 24,
+                  height: isMobile ? 20 : 24,
                   decoration: BoxDecoration(
                     color: color,
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: isMobile ? 8 : 12),
                 Expanded(
                   child: Text(
                     category['name'] ?? 'ללא שם',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
+                      fontSize: isMobile ? 14 : 16,
                       fontWeight: FontWeight.bold,
                     ),
-                    maxLines: 1,
+                    maxLines: isMobile ? 2 : 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
             
-            const SizedBox(height: 12),
+            SizedBox(height: isMobile ? 8 : 12),
             
             if (category['description']?.isNotEmpty == true)
-              Text(
-                category['description'],
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
+              Expanded(
+                child: Text(
+                  category['description'],
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: isMobile ? 12 : 14,
+                  ),
+                  maxLines: isMobile ? 2 : 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
               ),
             
-            const Spacer(),
+            if (!isMobile || category['description']?.isEmpty == true) const Spacer(),
+            
+            SizedBox(height: isMobile ? 8 : 12),
             
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '${_getTutorialsCountForCategory(category['id'])} מדריכים',
-                  style: const TextStyle(
-                    color: Colors.white54,
-                    fontSize: 12,
+                Expanded(
+                  child: Text(
+                    '${_getTutorialsCountForCategory(category['id'])} מדריכים',
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: isMobile ? 10 : 12,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     InkWell(
                       onTap: () => _showEditCategoryDialog(category),
-                      child: const Icon(
+                      child: Icon(
                         Icons.edit,
-                        color: Color(0xFFE91E63),
-                        size: 18,
+                        color: const Color(0xFFE91E63),
+                        size: isMobile ? 16 : 18,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: isMobile ? 6 : 8),
                     InkWell(
                       onTap: () => _showDeleteCategoryDialog(category),
-                      child: const Icon(
+                      child: Icon(
                         Icons.delete,
                         color: Colors.red,
-                        size: 18,
+                        size: isMobile ? 16 : 18,
                       ),
                     ),
                   ],

@@ -187,18 +187,40 @@ class _StoreManagementScreenState extends State<StoreManagementScreen> with Sing
     }
 
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          childAspectRatio: 1.2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-        ),
-        itemCount: _categories.length,
-        itemBuilder: (context, index) {
-          final category = _categories[index];
-          return _buildCategoryCard(category);
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 8 : 16),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenWidth = constraints.maxWidth;
+          int crossAxisCount;
+          double childAspectRatio;
+          
+          if (screenWidth < 400) {
+            crossAxisCount = 1;
+            childAspectRatio = 2.5;
+          } else if (screenWidth < 600) {
+            crossAxisCount = 2;
+            childAspectRatio = 1.8;
+          } else if (screenWidth < 900) {
+            crossAxisCount = 2;
+            childAspectRatio = 1.5;
+          } else {
+            crossAxisCount = 3;
+            childAspectRatio = 1.2;
+          }
+          
+          return GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              childAspectRatio: childAspectRatio,
+              crossAxisSpacing: screenWidth < 600 ? 8 : 16,
+              mainAxisSpacing: screenWidth < 600 ? 8 : 16,
+            ),
+            itemCount: _categories.length,
+            itemBuilder: (context, index) {
+              final category = _categories[index];
+              return _buildCategoryCard(category);
+            },
+          );
         },
       ),
     );

@@ -13,23 +13,27 @@ class AdminLayout extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    
     return Scaffold(
+      drawer: isMobile ? _buildDrawer(context) : null,
       body: Row(
         children: [
-          // תפריט צדדי
-          _buildSideNavigationRail(context),
+          // תפריט צדדי - רק למסכים גדולים
+          if (!isMobile) _buildSideNavigationRail(context),
           
           // תוכן ראשי
           Expanded(
             child: Column(
               children: [
                 // כותרת עליונה
-                _buildTopBar(context),
+                _buildTopBar(context, isMobile),
                 
                 // תוכן הדף
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(isMobile ? 8 : 16),
                     child: child,
                   ),
                 ),
@@ -344,9 +348,217 @@ class AdminLayout extends ConsumerWidget {
     );
   }
 
-  Widget _buildTopBar(BuildContext context) {
+  Widget _buildDrawer(BuildContext context) {
+    final currentLocation = GoRouterState.of(context).matchedLocation;
+    
+    return Drawer(
+      backgroundColor: const Color(0xFF1A1A1A),
+      child: Column(
+        children: [
+          // לוגו וכותרת
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 48, 16, 24),
+            child: Row(
+              children: [
+                const AppLogo(
+                  size: 40,
+                  isIcon: true,
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'פאנל ניהול',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        'סטודיו שרון לריקוד',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const Divider(color: Color(0xFF333333)),
+          
+          // תפריט ניהול
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              children: [
+                const SizedBox(height: 8),
+                
+                // Dashboard
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.dashboard_outlined,
+                  activeIcon: Icons.dashboard,
+                  title: 'לוח בקרה',
+                  path: '/dashboard',
+                  isActive: currentLocation == '/dashboard',
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // כותרת ניהול תוכן
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    'ניהול תוכן',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.white54,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 8),
+                
+                // פריטי תפריט
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.video_library_outlined,
+                  activeIcon: Icons.video_library,
+                  title: 'ניהול מדריכים',
+                  path: '/tutorials',
+                  isActive: currentLocation == '/tutorials',
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.photo_library_outlined,
+                  activeIcon: Icons.photo_library,
+                  title: 'ניהול גלריה',
+                  path: '/gallery',
+                  isActive: currentLocation == '/gallery',
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.article_outlined,
+                  activeIcon: Icons.article,
+                  title: 'ניהול עדכונים',
+                  path: '/updates',
+                  isActive: currentLocation == '/updates',
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.group_outlined,
+                  activeIcon: Icons.group,
+                  title: 'ניהול קבוצות',
+                  path: '/groups',
+                  isActive: currentLocation == '/groups',
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.store_outlined,
+                  activeIcon: Icons.store,
+                  title: 'ניהול חנות',
+                  path: '/store',
+                  isActive: currentLocation == '/store',
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // כותרת ניהול מערכת
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    'ניהול מערכת',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.white54,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 8),
+                
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.settings_outlined,
+                  activeIcon: Icons.settings,
+                  title: 'ניהול כללי',
+                  path: '/general',
+                  isActive: currentLocation == '/general',
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.palette_outlined,
+                  activeIcon: Icons.palette,
+                  title: 'עיצוב האפליקציה',
+                  path: '/theme',
+                  isActive: currentLocation == '/theme',
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.people_outline,
+                  activeIcon: Icons.people,
+                  title: 'ניהול משתמשים',
+                  path: '/users',
+                  isActive: currentLocation == '/users',
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.info_outline,
+                  activeIcon: Icons.info,
+                  title: 'אודות הסטודיו',
+                  path: '/about',
+                  isActive: currentLocation == '/about',
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.description_outlined,
+                  activeIcon: Icons.description,
+                  title: 'תקנון ופרטיות',
+                  path: '/terms',
+                  isActive: currentLocation == '/terms',
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.contact_support_outlined,
+                  activeIcon: Icons.contact_support,
+                  title: 'ניהול יצירת קשר',
+                  path: '/contact',
+                  isActive: currentLocation == '/contact',
+                ),
+              ],
+            ),
+          ),
+          
+          // כפתור יציאה
+          Container(
+            padding: const EdgeInsets.all(12),
+            child: _buildNavItem(
+              context: context,
+              icon: Icons.logout,
+              activeIcon: Icons.logout,
+              title: 'יציאה',
+              path: '/login',
+              isActive: false,
+              isDestructive: true,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopBar(BuildContext context, bool isMobile) {
     return Container(
-      height: 70,
+      height: isMobile ? 60 : 70,
       decoration: const BoxDecoration(
         color: Color(0xFF1A1A1A),
         border: Border(
@@ -354,9 +566,23 @@ class AdminLayout extends ConsumerWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+        padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 24),
         child: Row(
           children: [
+            // כפתור המבורגר במובייל
+            if (isMobile) ...[
+              Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(
+                    Icons.menu,
+                    color: Colors.white,
+                  ),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+            
             // כותרת הדף הנוכחי
             Expanded(
               child: Column(
@@ -365,40 +591,47 @@ class AdminLayout extends ConsumerWidget {
                 children: [
                   Text(
                     _getPageTitle(GoRouterState.of(context).matchedLocation),
-                    style: const TextStyle(
-                      fontSize: 20,
+                    style: TextStyle(
+                      fontSize: isMobile ? 16 : 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  Text(
-                    _getPageSubtitle(GoRouterState.of(context).matchedLocation),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white70,
+                  if (!isMobile)
+                    Text(
+                      _getPageSubtitle(GoRouterState.of(context).matchedLocation),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white70,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
                 ],
               ),
             ),
             
             // כפתורי פעולה
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 // הודעות
                 IconButton(
                   icon: Stack(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.notifications_outlined,
                         color: Colors.white70,
+                        size: isMobile ? 20 : 24,
                       ),
                       Positioned(
                         right: 0,
                         top: 0,
                         child: Container(
-                          width: 8,
-                          height: 8,
+                          width: 6,
+                          height: 6,
                           decoration: const BoxDecoration(
                             color: Color(0xFFE91E63),
                             shape: BoxShape.circle,
@@ -412,39 +645,50 @@ class AdminLayout extends ConsumerWidget {
                   },
                 ),
                 
-                const SizedBox(width: 8),
+                if (!isMobile) const SizedBox(width: 8),
                 
                 // פרופיל אדמין
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2A2A2A),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Color(0xFFE91E63),
-                        child: Icon(
-                          Icons.person,
-                          size: 18,
-                          color: Colors.white,
+                if (!isMobile)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2A2A2A),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundColor: Color(0xFFE91E63),
+                          child: Icon(
+                            Icons.person,
+                            size: 18,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'מנהל מערכת',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                        SizedBox(width: 8),
+                        Text(
+                          'מנהל מערכת',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                if (isMobile)
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: const Color(0xFFE91E63),
+                    child: Icon(
+                      Icons.person,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
               ],
             ),
           ],
