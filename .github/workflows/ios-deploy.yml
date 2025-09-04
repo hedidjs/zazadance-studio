@@ -1,0 +1,61 @@
+name: iOS Build and Deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths: 
+      - 'user-app/**'
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.22.2'
+        channel: 'stable'
+        
+    - name: Install dependencies
+      run: |
+        cd user-app
+        flutter pub get
+        cd ios
+        pod install
+        
+    - name: Setup App Store Connect API Key
+      run: |
+        mkdir -p ~/private_keys
+        echo '${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}' > ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
+        
+    - name: Build iOS app
+      run: |
+        cd user-app
+        flutter build ios --release --no-codesign
+        
+    - name: Archive and Upload to App Store
+      run: |
+        cd user-app/ios
+        xcodebuild -workspace Runner.xcworkspace \
+          -scheme Runner \
+          -sdk iphoneos \
+          -configuration Release \
+          -archivePath $PWD/build/Runner.xcarchive \
+          -allowProvisioningUpdates \
+          archive
+        
+        xcodebuild -exportArchive \
+          -archivePath $PWD/build/Runner.xcarchive \
+          -exportOptionsPlist $PWD/ExportOptions.plist \
+          -exportPath $PWD/build
+          
+        xcrun altool --upload-app \
+          --type ios \
+          --file "$PWD/build/ZaZa Dance Studio.ipa" \
+          --apiKey ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
+          --apiIssuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
