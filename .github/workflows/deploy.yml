@@ -1,0 +1,47 @@
+name: Deploy Admin Panel
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.3'
+        
+    - name: Get dependencies
+      run: |
+        cd admin-app
+        flutter pub get
+        
+    - name: Build web app
+      run: |
+        cd admin-app
+        flutter build web --release --web-renderer canvaskit
+        
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: admin-app/build/web
+        destination_dir: admin
+        
+    - name: Update docs directory
+      run: |
+        rm -rf docs/admin
+        mkdir -p docs/admin
+        cp -r admin-app/build/web/* docs/admin/
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add docs/admin
+        git diff --staged --quiet || git commit -m "Auto-update admin deployment [skip ci]"
+        git push
