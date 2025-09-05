@@ -1,6 +1,6 @@
 {
-    "name": "dance_studio_admin",
-    "short_name": "dance_studio_admin",
+    "name": "dance_studio_app",
+    "short_name": "dance_studio_app",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
