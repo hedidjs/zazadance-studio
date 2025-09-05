@@ -1,7 +1,7 @@
 [build]
   # Static deployment - pre-built files (NO BUILD COMMAND NEEDED)
   command = ""
-  publish = "user-app/build/web"
+  publish = "build"
 
 [build.environment]
   NODE_VERSION = "18"
