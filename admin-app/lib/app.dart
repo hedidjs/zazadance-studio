@@ -16,7 +16,7 @@ import 'shared/layouts/admin_layout.dart';
 
 class AdminRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/updates',
     routes: [
       // Login route
       GoRoute(
