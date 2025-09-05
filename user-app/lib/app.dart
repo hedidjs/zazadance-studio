@@ -33,6 +33,7 @@ class AppRouter {
       
       // Allow public routes without any authentication check
       if (path == '/privacy' || path == '/support') {
+        print('DEBUG: Accessing public route: $path - allowing access');
         return null; // Don't redirect, allow access
       }
       
@@ -40,13 +41,17 @@ class AppRouter {
       final isLoggingIn = path == '/login';
       final isRegistering = path == '/register';
       
+      print('DEBUG: Path: $path, isLoggedIn: $isLoggedIn, isLoggingIn: $isLoggingIn');
+      
       // אם המשתמש לא מחובר ולא בדף התחברות/הרשמה - הפנה להתחברות
       if (!isLoggedIn && !isLoggingIn && !isRegistering) {
+        print('DEBUG: Redirecting to login because user not logged in');
         return '/login';
       }
       
       // אם המשתמש מחובר ובדף התחברות/הרשמה - הפנה לעמוד הבית
       if (isLoggedIn && (isLoggingIn || isRegistering)) {
+        print('DEBUG: Redirecting to home because user is logged in on auth page');
         return '/';
       }
       
