@@ -28,16 +28,19 @@ class AppRouter {
   static GoRouter router(WidgetRef ref) => GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
-      final isLoggedIn = _supabase.auth.currentUser != null;
       final path = state.matchedLocation;
+      
+      // Allow public routes without any authentication check
+      if (path == '/privacy' || path == '/support') {
+        return null; // Don't redirect, allow access
+      }
+      
+      final isLoggedIn = _supabase.auth.currentUser != null;
       final isLoggingIn = path == '/login';
       final isRegistering = path == '/register';
-      final isPublicRoute = path == '/privacy' || path == '/support';
       
-      print('Route redirect: path=$path, isLoggedIn=$isLoggedIn, isPublicRoute=$isPublicRoute');
-      
-      // אם המשתמש לא מחובר ולא בדף התחברות/הרשמה/דפים ציבוריים - הפנה להתחברות
-      if (!isLoggedIn && !isLoggingIn && !isRegistering && !isPublicRoute) {
+      // אם המשתמש לא מחובר ולא בדף התחברות/הרשמה - הפנה להתחברות
+      if (!isLoggedIn && !isLoggingIn && !isRegistering) {
         return '/login';
       }
       
