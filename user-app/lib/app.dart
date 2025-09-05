@@ -26,14 +26,15 @@ class AppRouter {
   static final _supabase = Supabase.instance.client;
   
   static GoRouter router(WidgetRef ref) => GoRouter(
-    refreshListenable: ref.read(authChangeNotifierProvider),
     initialLocation: '/',
     redirect: (context, state) {
       final isLoggedIn = _supabase.auth.currentUser != null;
-      final isLoggingIn = state.matchedLocation == '/login';
-      final isRegistering = state.matchedLocation == '/register';
-      final isPublicRoute = state.matchedLocation == '/privacy' || 
-                           state.matchedLocation == '/support';
+      final path = state.matchedLocation;
+      final isLoggingIn = path == '/login';
+      final isRegistering = path == '/register';
+      final isPublicRoute = path == '/privacy' || path == '/support';
+      
+      print('Route redirect: path=$path, isLoggedIn=$isLoggedIn, isPublicRoute=$isPublicRoute');
       
       // אם המשתמש לא מחובר ולא בדף התחברות/הרשמה/דפים ציבוריים - הפנה להתחברות
       if (!isLoggedIn && !isLoggingIn && !isRegistering && !isPublicRoute) {
