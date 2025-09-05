@@ -17,6 +17,8 @@ import 'features/favorites/favorites_full_screen.dart';
 import 'features/terms/terms_screen.dart';
 import 'features/orders/my_orders_screen.dart';
 import 'features/groups/groups_screen.dart';
+import 'features/public/public_privacy_screen.dart';
+import 'features/public/public_contact_screen.dart';
 import 'shared/widgets/main_scaffold.dart';
 import 'providers/auth_notifier.dart';
 
@@ -152,12 +154,12 @@ class AppRouter {
       // נתיבים ציבוריים (נגישים גם ללא התחברות)
       GoRoute(
         path: '/privacy',
-        builder: (context, state) => const TermsScreen(initialTab: 1), // טאב פרטיות
+        builder: (context, state) => const PublicPrivacyScreen(),
       ),
       
       GoRoute(
         path: '/support',
-        builder: (context, state) => const ContactScreen(),
+        builder: (context, state) => const PublicContactScreen(),
       ),
     ],
   );
