@@ -29,9 +29,11 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
     
     try {
       // Load updates only - don't worry about update_types for now
+      // Order by is_pinned first (pinned posts at top), then by created_at
       final updatesResponse = await _supabase
           .from('updates')
           .select('*')
+          .order('is_pinned', ascending: false)
           .order('created_at', ascending: false);
       
       setState(() {
@@ -159,16 +161,35 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
                 //     ),
                 //   ),
                 const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: update['is_active'] ? Colors.green : Colors.red,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    update['is_active'] ? 'פעיל' : 'לא פעיל',
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
+                Row(
+                  children: [
+                    // Pinned indicator
+                    if (update['is_pinned'] == true)
+                      Container(
+                        margin: const EdgeInsets.only(left: 8),
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFA726),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.push_pin,
+                          size: 12,
+                          color: Colors.white,
+                        ),
+                      ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: update['is_active'] ? Colors.green : Colors.red,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        update['is_active'] ? 'פעיל' : 'לא פעיל',
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -269,6 +290,7 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
     final imageUrlController = TextEditingController(text: update?['image_url'] ?? '');
     String? selectedUpdateTypeId = update?['update_type_id'];
     bool isActive = update?['is_active'] ?? true;
+    bool isPinned = update?['is_pinned'] ?? false;
     Uint8List? selectedImageBytes;
     String? selectedImageName;
     bool isUploadingImage = false;
@@ -444,6 +466,17 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
                       const Text('עדכון פעיל', style: TextStyle(color: Colors.white)),
                     ],
                   ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: isPinned,
+                        onChanged: (value) => setState(() => isPinned = value ?? false),
+                        activeColor: const Color(0xFFE91E63),
+                      ),
+                      const Text('נעוץ למעלה', style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -492,6 +525,7 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
                     'author_name': authorController.text.isEmpty ? null : authorController.text,
                     'image_url': finalImageUrl?.isEmpty == true ? null : finalImageUrl,
                     'is_active': isActive,
+                    'is_pinned': isPinned,
                     'updated_at': DateTime.now().toIso8601String(),
                   };
                   
