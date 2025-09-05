@@ -24,6 +24,12 @@ class AdminRouter {
         builder: (context, state) => const SimpleLoginScreen(),
       ),
       
+      // Redirect /admin to /updates
+      GoRoute(
+        path: '/admin',
+        redirect: (context, state) => '/updates',
+      ),
+      
       // Admin routes with layout
       ShellRoute(
         builder: (context, state, child) => AdminLayout(child: child),
