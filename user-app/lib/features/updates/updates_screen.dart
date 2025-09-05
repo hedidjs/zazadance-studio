@@ -35,6 +35,7 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
           .from('updates')
           .select('*')
           .eq('is_active', true)
+          .order('is_pinned', ascending: false)
           .order('created_at', ascending: false);
       
       // טעינת סוגי עדכונים בנפרד
@@ -193,6 +194,22 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                             color: _parseColor(update['update_types']['color']),
                             fontWeight: FontWeight.w600,
                           ),
+                        ),
+                      ),
+                    
+                    // Pinned indicator
+                    if (update['is_pinned'] == true)
+                      Container(
+                        margin: const EdgeInsets.only(left: 8),
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFA726),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.push_pin,
+                          size: 12,
+                          color: Colors.white,
                         ),
                       ),
                     
