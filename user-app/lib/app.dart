@@ -28,7 +28,7 @@ class AppRouter {
   static GoRouter router(WidgetRef ref) => GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
-      final path = state.matchedLocation;
+      final path = state.uri.path;
       
       // Allow public routes without any authentication check
       if (path == '/privacy' || path == '/support') {
