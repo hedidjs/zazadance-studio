@@ -32,7 +32,7 @@ class AppRouter {
       final path = state.uri.path;
       
       // Allow public routes without any authentication check
-      if (path == '/privacy' || path == '/support') {
+      if (path.toLowerCase() == '/privacy' || path.toLowerCase() == '/support') {
         print('DEBUG: Accessing public route: $path - allowing access');
         return null; // Don't redirect, allow access
       }

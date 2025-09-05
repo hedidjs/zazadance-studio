@@ -50372,7 +50372,7 @@ r[7]=e+r[7]>>>0}}
 A.aai.prototype={}
 A.af1.prototype={
 $2(a,b){var s,r,q,p,o=b.b.gcQ()
-if(o==="/privacy"||o==="/support"){A.eH("DEBUG: Accessing public route: "+o+" - allowing access")
+if(o.toLowerCase()==="/privacy"||o.toLowerCase()==="/support"){A.eH("DEBUG: Accessing public route: "+o+" - allowing access")
 return null}s=$.baO().gda().c
 s=(s==null?null:s.r)==null
 r=!s
