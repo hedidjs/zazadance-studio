@@ -30,9 +30,11 @@ class AppRouter {
       final isLoggedIn = _supabase.auth.currentUser != null;
       final isLoggingIn = state.matchedLocation == '/login';
       final isRegistering = state.matchedLocation == '/register';
+      final isPublicRoute = state.matchedLocation == '/privacy' || 
+                           state.matchedLocation == '/support';
       
-      // אם המשתמש לא מחובר ולא בדף התחברות/הרשמה - הפנה להתחברות
-      if (!isLoggedIn && !isLoggingIn && !isRegistering) {
+      // אם המשתמש לא מחובר ולא בדף התחברות/הרשמה/דפים ציבוריים - הפנה להתחברות
+      if (!isLoggedIn && !isLoggingIn && !isRegistering && !isPublicRoute) {
         return '/login';
       }
       
@@ -143,7 +145,19 @@ class AppRouter {
             },
           ),
           
+          
         ],
+      ),
+      
+      // נתיבים ציבוריים (נגישים גם ללא התחברות)
+      GoRoute(
+        path: '/privacy',
+        builder: (context, state) => const TermsScreen(initialTab: 1), // טאב פרטיות
+      ),
+      
+      GoRoute(
+        path: '/support',
+        builder: (context, state) => const ContactScreen(),
       ),
     ],
   );
