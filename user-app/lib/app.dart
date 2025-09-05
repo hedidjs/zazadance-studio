@@ -27,6 +27,7 @@ class AppRouter {
   
   static GoRouter router(WidgetRef ref) => GoRouter(
     initialLocation: '/',
+    routerNeglect: true,
     redirect: (context, state) {
       final path = state.uri.path;
       
