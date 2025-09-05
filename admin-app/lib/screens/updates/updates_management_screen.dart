@@ -28,34 +28,14 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // Load updates without join first
+      // Load updates only - don't worry about update_types for now
       final updatesResponse = await _supabase
           .from('updates')
           .select('*')
           .order('created_at', ascending: false);
       
-      // Load update types separately
-      final updateTypesResponse = await _supabase
-          .from('update_types')
-          .select('*')
-          .eq('is_active', true);
-      
-      // Create a map of update types by ID
-      final updateTypesMap = <String, Map<String, dynamic>>{};
-      for (final type in updateTypesResponse) {
-        updateTypesMap[type['id']] = type;
-      }
-      
-      // Combine the data
-      final updatesWithTypes = List<Map<String, dynamic>>.from(updatesResponse);
-      for (final update in updatesWithTypes) {
-        if (update['update_type_id'] != null) {
-          update['update_types'] = updateTypesMap[update['update_type_id']];
-        }
-      }
-
       setState(() {
-        _updates = updatesWithTypes;
+        _updates = List<Map<String, dynamic>>.from(updatesResponse);
         _isLoading = false;
       });
     } catch (e) {
@@ -161,22 +141,23 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
           children: [
             Row(
               children: [
-                if (update['update_types'] != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _parseColor(update['update_types']['color']).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      update['update_types']['name_he'] ?? '',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: _parseColor(update['update_types']['color']),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                // Temporarily disabled - update_types not available
+                // if (update['update_types'] != null)
+                //   Container(
+                //     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                //     decoration: BoxDecoration(
+                //       color: _parseColor(update['update_types']['color']).withOpacity(0.2),
+                //       borderRadius: BorderRadius.circular(6),
+                //     ),
+                //     child: Text(
+                //       update['update_types']['name_he'] ?? '',
+                //       style: TextStyle(
+                //         fontSize: 12,
+                //         color: _parseColor(update['update_types']['color']),
+                //         fontWeight: FontWeight.bold,
+                //       ),
+                //     ),
+                //   ),
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -353,29 +334,30 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
                     ),
                     style: const TextStyle(color: Colors.white),
                   ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: selectedUpdateTypeId,
-                    decoration: const InputDecoration(
-                      labelText: 'סוג עדכון',
-                      labelStyle: TextStyle(color: Colors.white70),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white30),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Color(0xFFE91E63)),
-                      ),
-                    ),
-                    dropdownColor: const Color(0xFF2A2A2A),
-                    style: const TextStyle(color: Colors.white),
-                    items: _updateTypes.map((type) {
-                      return DropdownMenuItem<String>(
-                        value: type['id'],
-                        child: Text(type['name_he']),
-                      );
-                    }).toList(),
-                    onChanged: (value) => setState(() => selectedUpdateTypeId = value),
-                  ),
+                  // Temporarily disabled until update_type_id column is added to database
+                  // const SizedBox(height: 16),
+                  // DropdownButtonFormField<String>(
+                  //   value: selectedUpdateTypeId,
+                  //   decoration: const InputDecoration(
+                  //     labelText: 'סוג עדכון',
+                  //     labelStyle: TextStyle(color: Colors.white70),
+                  //     enabledBorder: OutlineInputBorder(
+                  //       borderSide: BorderSide(color: Colors.white30),
+                  //     ),
+                  //     focusedBorder: OutlineInputBorder(
+                  //       borderSide: BorderSide(color: Color(0xFFE91E63)),
+                  //     ),
+                  //   ),
+                  //   dropdownColor: const Color(0xFF2A2A2A),
+                  //   style: const TextStyle(color: Colors.white),
+                  //   items: _updateTypes.map((type) {
+                  //     return DropdownMenuItem<String>(
+                  //       value: type['id'],
+                  //       child: Text(type['name_he']),
+                  //     );
+                  //   }).toList(),
+                  //   onChanged: (value) => setState(() => selectedUpdateTypeId = value),
+                  // ),
                   const SizedBox(height: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -504,15 +486,19 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
                         .getPublicUrl('updates/$fileName');
                   }
 
-                  final updateData = {
+                  final updateData = <String, dynamic>{
                     'title_he': titleController.text,
                     'content_he': contentController.text,
                     'author_name': authorController.text.isEmpty ? null : authorController.text,
-                    'update_type_id': selectedUpdateTypeId,
                     'image_url': finalImageUrl?.isEmpty == true ? null : finalImageUrl,
                     'is_active': isActive,
                     'updated_at': DateTime.now().toIso8601String(),
                   };
+                  
+                  // Only add update_type_id if it's selected and the column exists
+                  if (selectedUpdateTypeId != null && selectedUpdateTypeId.isNotEmpty) {
+                    updateData['update_type_id'] = selectedUpdateTypeId;
+                  }
 
                   if (isEditing) {
                     await _supabase
