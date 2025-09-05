@@ -28,13 +28,34 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
     setState(() => _isLoading = true);
     
     try {
-      final response = await _supabase
+      // Load updates without join first
+      final updatesResponse = await _supabase
           .from('updates')
-          .select('*, update_types(name_he, color)')
+          .select('*')
           .order('created_at', ascending: false);
+      
+      // Load update types separately
+      final updateTypesResponse = await _supabase
+          .from('update_types')
+          .select('*')
+          .eq('is_active', true);
+      
+      // Create a map of update types by ID
+      final updateTypesMap = <String, Map<String, dynamic>>{};
+      for (final type in updateTypesResponse) {
+        updateTypesMap[type['id']] = type;
+      }
+      
+      // Combine the data
+      final updatesWithTypes = List<Map<String, dynamic>>.from(updatesResponse);
+      for (final update in updatesWithTypes) {
+        if (update['update_type_id'] != null) {
+          update['update_types'] = updateTypesMap[update['update_type_id']];
+        }
+      }
 
       setState(() {
-        _updates = List<Map<String, dynamic>>.from(response);
+        _updates = updatesWithTypes;
         _isLoading = false;
       });
     } catch (e) {
