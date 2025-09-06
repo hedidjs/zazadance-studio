@@ -10,6 +10,7 @@
         "cached_network_image",
         "cupertino_icons",
         "flutter",
+        "flutter_dotenv",
         "flutter_localizations",
         "flutter_riverpod",
         "go_router",
@@ -1259,6 +1260,13 @@
       "version": "1.0.1",
       "dependencies": [
         "web"
+      ]
+    },
+    {
+      "name": "flutter_dotenv",
+      "version": "5.2.1",
+      "dependencies": [
+        "flutter"
       ]
     }
   ],

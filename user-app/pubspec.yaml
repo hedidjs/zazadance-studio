@@ -13,6 +13,10 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  
+  # Shared Core Library
+  shared_core:
+    path: ../shared_core
 
   # State Management
   flutter_riverpod: ^2.6.1
@@ -36,6 +40,7 @@ dependencies:
   share_plus: ^10.0.4
   image_picker: ^1.0.8
   visibility_detector: ^0.4.0+2
+  flutter_dotenv: ^5.1.0
   
   # Icons
   cupertino_icons: ^1.0.8
@@ -51,6 +56,7 @@ flutter:
   
   assets:
     - assets/images/
+    - .env
 
 flutter_launcher_icons:
   android: true

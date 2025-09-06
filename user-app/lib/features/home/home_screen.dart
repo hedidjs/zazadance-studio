@@ -187,12 +187,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             child: profileImageUrl != null
                 ? ClipOval(
-                    child: Image.network(
-                      profileImageUrl,
+                    child: CachedNetworkImage(
+                      imageUrl: profileImageUrl,
                       width: 60,
                       height: 60,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey[400],
+                        child: const Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => const Icon(
                         Icons.person,
                         color: Colors.white,
                         size: 30,
@@ -393,12 +401,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   top: Radius.circular(12),
                                 ),
                                 child: tutorial['thumbnail_url'] != null
-                                    ? Image.network(
-                                        tutorial['thumbnail_url'],
+                                    ? CachedNetworkImage(
+                                        imageUrl: tutorial['thumbnail_url'],
                                         width: double.infinity,
                                         height: double.infinity,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) => Container(
+                                        placeholder: (context, url) => Container(
+                                          color: Colors.grey[800],
+                                          child: const Center(
+                                            child: CircularProgressIndicator(
+                                              color: Color(0xFFE91E63),
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                        ),
+                                        errorWidget: (context, url, error) => Container(
                                           color: Colors.grey[800],
                                         ),
                                       )
@@ -517,12 +534,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: (image['thumbnail_url'] ?? image['media_url']) != null
-                        ? Image.network(
-                            image['thumbnail_url'] ?? image['media_url'],
+                        ? CachedNetworkImage(
+                            imageUrl: image['thumbnail_url'] ?? image['media_url'],
                             fit: BoxFit.cover,
                             width: double.infinity,
                             height: double.infinity,
-                            errorBuilder: (context, error, stackTrace) => const Center(
+                            placeholder: (context, url) => Container(
+                              color: Colors.grey[800],
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFFE91E63),
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => const Center(
                               child: Icon(
                                 Icons.image,
                                 color: Colors.grey,

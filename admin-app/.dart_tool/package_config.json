@@ -218,6 +218,12 @@
       "languageVersion": "2.14"
     },
     {
+      "name": "flutter_dotenv",
+      "rootUri": "file:///Users/rontzarfati/.pub-cache/hosted/pub.dev/flutter_dotenv-5.2.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "flutter_inappwebview",
       "rootUri": "file:///Users/rontzarfati/.pub-cache/hosted/pub.dev/flutter_inappwebview-6.1.5",
       "packageUri": "lib/",

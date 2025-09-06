@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shared_core/repositories/gallery_repository.dart';
+import 'package:shared_core/utils/pagination_result.dart';
+import 'package:shared_core/models/gallery_image.dart';
 import 'photo_view_screen.dart';
 import '../favorites/favorites_service.dart';
 
@@ -12,18 +15,36 @@ class GalleryScreen extends ConsumerStatefulWidget {
 }
 
 class _GalleryScreenState extends ConsumerState<GalleryScreen> {
-  final _supabase = Supabase.instance.client;
+  final _galleryRepository = SupabaseGalleryRepository();
   
-  List<Map<String, dynamic>> _categories = [];
-  List<Map<String, dynamic>> _galleryItems = [];
-  String? _selectedCategoryId;
+  PaginationResult<GalleryImage>? _paginationResult;
+  List<String> _categories = [];
+  String? _selectedCategory;
   bool _isLoading = true;
-  bool _showingAlbums = true; // מצב תצוגה: אלבומים או תמונות
+  bool _isLoadingMore = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _loadGalleryData();
+    _loadCategories();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8 &&
+        !_isLoadingMore && 
+        _paginationResult != null && 
+        _paginationResult!.hasMore) {
+      _loadMoreImages();
+    }
   }
 
   Future<void> _loadGalleryData() async {
@@ -32,35 +53,31 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
         _isLoading = true;
       });
 
-      // טעינת אלבומים (שמשמשים כקטגוריות)
-      final categoriesResponse = await _supabase
-          .from('gallery_albums')
-          .select('id, name_he, description_he, cover_image_url')
-          .eq('is_active', true)
-          .order('created_at', ascending: false);
-
-      // טעינת תמונות מהאלבומים
-      final galleryResponse = await _supabase
-          .from('gallery_images')
-          .select('''
-            id, title_he, media_url, thumbnail_url, album_id, likes_count, views_count, created_at,
-            gallery_albums(id, name_he, cover_image_url)
-          ''')
-          .eq('is_active', true)
-          .eq('is_published', true)
-          .order('created_at', ascending: false);
+      final result = await _galleryRepository.getGalleryImages(
+        page: 1,
+        pageSize: 20,
+        category: _selectedCategory,
+      );
 
       if (mounted) {
-        setState(() {
-          _categories = List<Map<String, dynamic>>.from(categoriesResponse);
-          _galleryItems = List<Map<String, dynamic>>.from(galleryResponse);
-          _isLoading = false;
-        });
-        
-        // טעינת מצב מועדפים לכל פריטי הגלריה
-        final favoritesNotifier = ref.read(favoritesNotifierProvider.notifier);
-        for (final item in _galleryItems) {
-          favoritesNotifier.loadFavoriteState('gallery', item['id']);
+        if (result.success && result.images != null) {
+          setState(() {
+            _paginationResult = result.images;
+            _isLoading = false;
+          });
+          
+          // Load favorite states for all images
+          final favoritesNotifier = ref.read(favoritesNotifierProvider.notifier);
+          for (final image in _paginationResult!.items) {
+            favoritesNotifier.loadFavoriteState('gallery', image.id);
+          }
+        } else {
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('שגיאה בטעינת הגלריה: ${result.errorMessage}')),
+          );
         }
       }
     } catch (e) {
@@ -75,18 +92,66 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
     }
   }
 
-  List<Map<String, dynamic>> get _filteredGalleryItems {
-    if (_selectedCategoryId == null) return _galleryItems;
-    return _galleryItems.where((item) => 
-      item['album_id'] == _selectedCategoryId
-    ).toList();
+  Future<void> _loadCategories() async {
+    try {
+      final categories = await _galleryRepository.getGalleryCategories();
+      if (mounted) {
+        setState(() {
+          _categories = categories;
+        });
+      }
+    } catch (e) {
+      // Categories are optional, so we don't show error
+    }
   }
+
+  Future<void> _loadMoreImages() async {
+    if (_paginationResult == null || !_paginationResult!.hasMore || _isLoadingMore) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      final result = await _galleryRepository.getGalleryImages(
+        page: _paginationResult!.currentPage + 1,
+        pageSize: 20,
+        category: _selectedCategory,
+      );
+
+      if (mounted) {
+        if (result.success && result.images != null) {
+          setState(() {
+            _paginationResult = _paginationResult!.appendPage(result.images!);
+            _isLoadingMore = false;
+          });
+          
+          // Load favorite states for new images
+          final favoritesNotifier = ref.read(favoritesNotifierProvider.notifier);
+          for (final image in result.images!.items) {
+            favoritesNotifier.loadFavoriteState('gallery', image.id);
+          }
+        } else {
+          setState(() {
+            _isLoadingMore = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+      }
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
-      appBar: _showingAlbums ? AppBar(
+      appBar: AppBar(
         backgroundColor: const Color(0xFF121212),
         elevation: 0,
         title: const Text(
@@ -96,22 +161,6 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
-        ),
-      ) : AppBar(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: Text(
-          _categories.firstWhere((cat) => cat['id'] == _selectedCategoryId, 
-              orElse: () => {'name_he': 'אלבום'})['name_he'] ?? 'אלבום',
-          style: const TextStyle(color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            setState(() {
-              _showingAlbums = true;
-              _selectedCategoryId = null;
-            });
-          },
         ),
       ),
       body: _isLoading
@@ -123,198 +172,56 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
           : RefreshIndicator(
               color: const Color(0xFFE91E63),
               onRefresh: _loadGalleryData,
-              child: _showingAlbums 
-                  ? _buildAlbumsView()
-                  : _buildGalleryGrid(),
-            ),
-    );
-  }
-
-  Widget _buildAlbumsView() {
-    if (_categories.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.photo_album_outlined,
-              size: 64,
-              color: Colors.grey,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'אין אלבומים זמינים',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
+              child: Column(
+                children: [
+                  if (_categories.isNotEmpty) _buildCategoriesSection(),
+                  Expanded(child: _buildGalleryGrid()),
+                ],
               ),
             ),
-          ],
-        ),
-      );
-    }
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
-        crossAxisSpacing: 6,
-        mainAxisSpacing: 6,
-        childAspectRatio: 1.0,
-      ),
-      itemCount: _categories.length,
-      itemBuilder: (context, index) {
-        final album = _categories[index];
-        final imageCount = _galleryItems.where((item) => item['album_id'] == album['id']).length;
-        
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              _selectedCategoryId = album['id'];
-              _showingAlbums = false;
-            });
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // תמונת כריכת האלבום
-                Expanded(
-                  flex: 4,
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
-                    ),
-                    child: album['cover_image_url'] != null
-                        ? Image.network(
-                            album['cover_image_url'],
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              color: Colors.grey.shade800,
-                              child: const Icon(Icons.photo_album, color: Colors.white54, size: 40),
-                            ),
-                          )
-                        : Container(
-                            color: Colors.grey.shade800,
-                            child: const Icon(Icons.photo_album, color: Colors.white54, size: 40),
-                          ),
-                  ),
-                ),
-                
-                // פרטי האלבום
-                Expanded(
-                  flex: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(6),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            album['name_he'] ?? 'אלבום ללא שם',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            const Icon(Icons.photo, size: 10, color: Colors.grey),
-                            const SizedBox(width: 2),
-                            Text(
-                              '$imageCount',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
+
 
   Widget _buildCategoriesSection() {
     return Container(
-      height: 120,
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              'אלבומי גלריה',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _categories.length + 1, // +1 עבור "הכל"
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  // כפתור "הכל"
-                  return _buildCategoryChip(
-                    name: 'הכל',
-                    color: const Color(0xFF00BCD4),
-                    isSelected: _selectedCategoryId == null,
-                    onTap: () {
-                      setState(() {
-                        _selectedCategoryId = null;
-                      });
-                    },
-                  );
-                }
-                
-                final album = _categories[index - 1];
-                final isSelected = _selectedCategoryId == album['id'];
-                
-                return _buildCategoryChip(
-                  name: album['name_he'] ?? '',
-                  color: const Color(0xFFE91E63), // צבע אחיד לכל האלבומים
-                  isSelected: isSelected,
-                  onTap: () {
-                    setState(() {
-                      _selectedCategoryId = album['id'];
-                    });
-                  },
-                );
+      height: 60,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: _categories.length + 1, // +1 עבור "הכל"
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            // כפתור "הכל"
+            return _buildCategoryChip(
+              name: 'הכל',
+              color: const Color(0xFF00BCD4),
+              isSelected: _selectedCategory == null,
+              onTap: () {
+                setState(() {
+                  _selectedCategory = null;
+                });
+                _loadGalleryData();
               },
-            ),
-          ),
-        ],
+            );
+          }
+          
+          final category = _categories[index - 1];
+          final isSelected = _selectedCategory == category;
+          
+          return _buildCategoryChip(
+            name: category,
+            color: const Color(0xFFE91E63), // צבע אחיד לכל הקטגוריות
+            isSelected: isSelected,
+            onTap: () {
+              setState(() {
+                _selectedCategory = category;
+              });
+              _loadGalleryData();
+            },
+          );
+        },
       ),
     );
   }
@@ -351,9 +258,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   }
 
   Widget _buildGalleryGrid() {
-    final filteredItems = _filteredGalleryItems;
-    
-    if (filteredItems.isEmpty) {
+    if (_paginationResult == null || _paginationResult!.items.isEmpty) {
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -385,29 +290,38 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
     }
 
     return GridView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.all(4),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
+        crossAxisCount: 3,
         crossAxisSpacing: 4,
         mainAxisSpacing: 4,
         childAspectRatio: 1.0,
       ),
-      itemCount: filteredItems.length,
+      itemCount: _paginationResult!.items.length + (_isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
-        final item = filteredItems[index];
-        return _buildGalleryCard(item);
+        if (index == _paginationResult!.items.length) {
+          return const Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFFE91E63),
+            ),
+          );
+        }
+        
+        final image = _paginationResult!.items[index];
+        return _buildGalleryCard(image);
       },
     );
   }
 
-  Widget _buildGalleryCard(Map<String, dynamic> item) {
+  Widget _buildGalleryCard(GalleryImage image) {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => PhotoViewScreen(
-              imageUrl: item['media_url'] ?? item['thumbnail_url'] ?? '',
-              title: item['title_he'] ?? '',
+              imageUrl: image.imageUrl,
+              title: image.titleHe,
             ),
           ),
         );
@@ -415,7 +329,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFF1E1E1E),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.2),
@@ -426,48 +340,46 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
         ),
         child: Stack(
           children: [
-            // תמונה
+            // תמונה עם caching
             ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: (item['thumbnail_url'] ?? item['media_url']) != null
-                  ? Image.network(
-                      item['thumbnail_url'] ?? item['media_url'],
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: Colors.grey[800],
-                        child: const Center(
-                          child: Icon(
-                            Icons.photo,
-                            size: 40,
-                            color: Colors.white54,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Container(
-                      color: Colors.grey[800],
-                      child: const Center(
-                        child: Icon(
-                          Icons.photo,
-                          size: 40,
-                          color: Colors.white54,
-                        ),
-                      ),
+              borderRadius: BorderRadius.circular(8),
+              child: CachedNetworkImage(
+                imageUrl: image.getDisplayImageUrl(preferThumbnail: true),
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  color: Colors.grey[800],
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFE91E63),
+                      strokeWidth: 2,
                     ),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: Colors.grey[800],
+                  child: const Center(
+                    child: Icon(
+                      Icons.photo,
+                      size: 30,
+                      color: Colors.white54,
+                    ),
+                  ),
+                ),
+              ),
             ),
             
             // Gradient overlay
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(8),
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.black.withOpacity(0.7),
+                    Colors.black.withOpacity(0.6),
                   ],
                 ),
               ),
@@ -475,18 +387,18 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
             
             // כפתור מועדפים
             Positioned(
-              top: 8,
-              left: 8,
+              top: 6,
+              left: 6,
               child: Consumer(
                 builder: (context, ref, child) {
                   final favoritesNotifier = ref.watch(favoritesNotifierProvider.notifier);
                   final favoriteStates = ref.watch(favoritesNotifierProvider);
-                  final key = 'gallery_${item['id']}';
+                  final key = 'gallery_${image.id}';
                   final isFavorite = favoriteStates[key] ?? false;
                   
                   return GestureDetector(
                     onTap: () async {
-                      await favoritesNotifier.toggleFavorite('gallery', item['id']);
+                      await favoritesNotifier.toggleFavorite('gallery', image.id);
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -494,20 +406,21 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                 ? 'הוסר מהמועדפים' 
                                 : 'נוסף למועדפים'),
                             backgroundColor: const Color(0xFF4CAF50),
+                            duration: const Duration(seconds: 1),
                           ),
                         );
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.all(6),
+                      padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
                         isFavorite ? Icons.star : Icons.star_outline,
                         color: isFavorite ? const Color(0xFFE91E63) : Colors.white,
-                        size: 18,
+                        size: 16,
                       ),
                     ),
                   );
@@ -516,75 +429,29 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
             ),
             
             // כותרת התמונה
-            Positioned(
-              bottom: 8,
-              left: 8,
-              right: 8,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item['title_he'] ?? 'ללא כותרת',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  
-                  const SizedBox(height: 4),
-                  
-                  // קטגוריה ולייקים
-                  Row(
-                    children: [
-                      // אלבום
-                      if (item['gallery_albums'] != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE91E63).withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            item['gallery_albums']['name_he'] ?? '',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Color(0xFFE91E63),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      
-                      const Spacer(),
-                      
-                      // לייקים
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.favorite,
-                            color: Color(0xFFE91E63),
-                            size: 12,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${item['likes_count'] ?? 0}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
+            if (image.titleHe.isNotEmpty)
+              Positioned(
+                bottom: 6,
+                left: 6,
+                right: 6,
+                child: Text(
+                  image.titleHe,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        offset: Offset(0, 1),
+                        blurRadius: 2,
+                        color: Colors.black,
                       ),
                     ],
                   ),
-                ],
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
           ],
         ),
       ),

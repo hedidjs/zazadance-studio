@@ -13,6 +13,7 @@
         "fl_chart",
         "flutter",
         "flutter_colorpicker",
+        "flutter_dotenv",
         "flutter_localizations",
         "flutter_riverpod",
         "flutter_staggered_grid_view",
@@ -1415,6 +1416,13 @@
       "version": "1.0.1",
       "dependencies": [
         "web"
+      ]
+    },
+    {
+      "name": "flutter_dotenv",
+      "version": "5.2.1",
+      "dependencies": [
+        "flutter"
       ]
     }
   ],

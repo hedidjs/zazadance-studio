@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../shared/widgets/app_logo.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -16,8 +17,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   
-  // Fixed admin password
-  static const String _adminPassword = 'Sharon6263';
+  // Admin credentials from environment
+  String get _adminPassword => dotenv.env['ADMIN_PASSWORD'] ?? '';
 
   @override
   void dispose() {
@@ -104,12 +105,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       validator: (value) {
-                        print('Validating password: "$value"');
                         if (value == null || value.isEmpty) {
-                          print('Validation failed: empty password');
                           return 'נא להזין את סיסמת האדמין';
                         }
-                        print('Validation passed');
                         return null;
                       },
                     ),
@@ -120,10 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : () {
-                          print('Button clicked!');
-                          _signIn();
-                        },
+                        onPressed: _isLoading ? null : _signIn,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
@@ -157,38 +152,26 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signIn() async {
-    print('_signIn called');
     if (!_formKey.currentState!.validate()) {
-      print('Form validation failed');
       return;
     }
 
-    print('Setting loading to true');
     setState(() => _isLoading = true);
 
     try {
-      print('Password entered: "${_passwordController.text}"');
-      print('Expected password: "$_adminPassword"');
-      
       // Simple password check
       if (_passwordController.text == _adminPassword) {
-        print('Password correct, navigating to dashboard');
         // Password correct, navigate to dashboard
         if (mounted) {
           context.go('/dashboard');
-        } else {
-          print('Widget not mounted');
         }
       } else {
-        print('Password incorrect');
         _showError('סיסמה שגויה');
       }
     } catch (error) {
-      print('Error in _signIn: $error');
       _showError('שגיאה לא צפויה: $error');
     } finally {
       if (mounted) {
-        print('Setting loading to false');
         setState(() => _isLoading = false);
       }
     }

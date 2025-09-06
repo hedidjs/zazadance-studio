@@ -12,6 +12,10 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   
+  # Shared Core Library
+  shared_core:
+    path: ../shared_core
+  
   # State Management
   flutter_riverpod: ^2.5.1
   riverpod: ^2.5.1
@@ -42,6 +46,7 @@ dependencies:
   # Utilities
   intl: any
   uuid: ^4.5.1
+  flutter_dotenv: ^5.1.0
   
   # Charts & Analytics
   fl_chart: ^0.66.2
@@ -57,6 +62,7 @@ flutter:
   
   assets:
     - assets/images/
+    - .env
 
 flutter_launcher_icons:
   web:

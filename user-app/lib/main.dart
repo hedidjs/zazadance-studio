@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'providers/app_config_provider.dart';
 import 'providers/theme_provider.dart';
 import 'app.dart';
@@ -14,10 +15,13 @@ Future<void> main() async {
   // Set URL strategy to use path instead of hash
   usePathUrlStrategy();
   
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
+  
   // אתחול Supabase
   await Supabase.initialize(
-    url: 'https://yyvoavzgapsyycjwirmg.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5dm9hdnpnYXBzeXljandpcm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyOTgyMzgsImV4cCI6MjA3MDg3NDIzOH0.IU_dW_8K-yuV1grWIWJdetU7jK-b-QDPFYp_m5iFP90',
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
   
   runApp(
