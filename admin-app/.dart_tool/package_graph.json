@@ -24,6 +24,7 @@
         "image_picker",
         "intl",
         "riverpod",
+        "shared_core",
         "supabase_flutter",
         "uuid"
       ],
@@ -76,6 +77,13 @@
       "version": "0.66.2",
       "dependencies": [
         "equatable",
+        "flutter"
+      ]
+    },
+    {
+      "name": "flutter_dotenv",
+      "version": "5.2.1",
+      "dependencies": [
         "flutter"
       ]
     },
@@ -244,6 +252,18 @@
         "meta",
         "riverpod",
         "state_notifier"
+      ]
+    },
+    {
+      "name": "shared_core",
+      "version": "1.0.0",
+      "dependencies": [
+        "flutter",
+        "flutter_dotenv",
+        "flutter_riverpod",
+        "intl",
+        "supabase_flutter",
+        "uuid"
       ]
     },
     {
@@ -1416,13 +1436,6 @@
       "version": "1.0.1",
       "dependencies": [
         "web"
-      ]
-    },
-    {
-      "name": "flutter_dotenv",
-      "version": "5.2.1",
-      "dependencies": [
-        "flutter"
       ]
     }
   ],
