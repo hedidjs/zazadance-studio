@@ -53,7 +53,7 @@ echo "📦 Getting admin app dependencies..."
 flutter pub get || handle_error "Failed to get admin app dependencies"
 
 echo "🏗️ Building admin app for web..."
-flutter build web --release --verbose || handle_error "Failed to build admin app"
+flutter build web --release --verbose --base-href="/admin/" || handle_error "Failed to build admin app"
 
 cd .. || handle_error "Failed to return to root directory"
 
