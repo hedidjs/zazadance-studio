@@ -19,6 +19,8 @@ class _GeneralManagementScreenState extends State<GeneralManagementScreen> {
   final _appNameController = TextEditingController();
   final _appDescriptionController = TextEditingController();
   final _appSubtitleController = TextEditingController();
+  final _iosDownloadController = TextEditingController();
+  final _androidDownloadController = TextEditingController();
   
   Map<String, dynamic>? _currentConfig;
   bool _isLoading = false;
@@ -40,6 +42,8 @@ class _GeneralManagementScreenState extends State<GeneralManagementScreen> {
     _appNameController.dispose();
     _appDescriptionController.dispose();
     _appSubtitleController.dispose();
+    _iosDownloadController.dispose();
+    _androidDownloadController.dispose();
     super.dispose();
   }
 
@@ -61,6 +65,8 @@ class _GeneralManagementScreenState extends State<GeneralManagementScreen> {
           _appNameController.text = response['app_name'] ?? '';
           _appDescriptionController.text = response['app_description'] ?? '';
           _appSubtitleController.text = response['app_subtitle'] ?? '';
+          _iosDownloadController.text = response['ios_download_url'] ?? '';
+          _androidDownloadController.text = response['android_download_url'] ?? '';
         });
       }
     } catch (e) {
@@ -134,6 +140,8 @@ class _GeneralManagementScreenState extends State<GeneralManagementScreen> {
         'app_name': _appNameController.text,
         'app_description': _appDescriptionController.text,
         'app_subtitle': _appSubtitleController.text,
+        'ios_download_url': _iosDownloadController.text.trim().isEmpty ? null : _iosDownloadController.text,
+        'android_download_url': _androidDownloadController.text.trim().isEmpty ? null : _androidDownloadController.text,
       };
 
       // העלאת לוגו אם נבחר
@@ -393,6 +401,66 @@ class _GeneralManagementScreenState extends State<GeneralManagementScreen> {
                       selectedPath: _selectedIconPath,
                       onTap: _pickIcon,
                       icon: Icons.apps,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // קארד קישורי הורדה
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(
+                          Icons.download,
+                          color: Color(0xFF00BCD4),
+                          size: 24,
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          'קישורי הורדת האפליקציה',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 8),
+                    
+                    const Text(
+                      'קישורים אלו יוצגו בעמוד הנחיתה של האתר',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white70,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // קישור iOS
+                    _buildTextField(
+                      controller: _iosDownloadController,
+                      label: 'קישור הורדה iOS (App Store)',
+                      icon: Icons.apple,
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // קישור Android
+                    _buildTextField(
+                      controller: _androidDownloadController,
+                      label: 'קישור הורדה Android (Google Play)',
+                      icon: Icons.android,
                     ),
                   ],
                 ),

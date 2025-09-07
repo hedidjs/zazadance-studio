@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>זאזא דאנס - אפליקציית הריקוד שלך</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .logo {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 2rem;
+            background: white;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: bold;
+            color: #667eea;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .download-btn {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 25px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 15px;
+            color: white;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+
+        .download-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .platform-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .ios-icon {
+            background: #000;
+        }
+
+        .android-icon {
+            background: #3DDC84;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading .download-btn {
+            cursor: wait;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .download-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .download-btn {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="content">
+        <div class="logo">
+            🕺💃
+        </div>
+        
+        <h1 id="appName">זאזא דאנס</h1>
+        <p class="subtitle" id="appDescription">
+            האפליקציה המושלמת ללמידת ריקוד<br>
+            הורידו עכשיו ותתחילו לרקוד!
+        </p>
+
+        <div class="download-buttons">
+            <a href="#" class="download-btn" id="iosLink">
+                <div class="platform-icon ios-icon">🍎</div>
+                <div>
+                    <div style="font-size: 0.9rem; opacity: 0.8;">הורידו עבור</div>
+                    <div>iPhone</div>
+                </div>
+            </a>
+
+            <a href="#" class="download-btn" id="androidLink">
+                <div class="platform-icon android-icon">🤖</div>
+                <div>
+                    <div style="font-size: 0.9rem; opacity: 0.8;">הורידו עבור</div>
+                    <div>Android</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="footer">
+        © 2025 זאזא דאנס - סטודיו לריקוד
+    </div>
+
+    <script>
+        // Supabase configuration (same as admin app)
+        const SUPABASE_URL = 'https://yyvoavzgapsyycjwirmg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5dm9hdnpnYXBzeXljandpcm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyOTgyMzgsImV4cCI6MjA3MDg3NDIzOH0.IU_dW_8K-yuV1grWIWJdetU7jK-b-QDPFYp_m5iFP90';
+
+        // Load app configuration from database
+        async function loadAppConfig() {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/app_config?select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (response.ok) {
+                    const configs = await response.json();
+                    if (configs.length > 0) {
+                        const config = configs[0];
+                        
+                        // Update page content
+                        if (config.app_name) {
+                            document.getElementById('appName').textContent = config.app_name;
+                            document.title = `${config.app_name} - אפליקציית הריקוד שלך`;
+                        }
+                        
+                        if (config.app_description) {
+                            document.getElementById('appDescription').innerHTML = 
+                                config.app_description.replace(/\n/g, '<br>');
+                        }
+
+                        // Update download links
+                        const iosLink = document.getElementById('iosLink');
+                        const androidLink = document.getElementById('androidLink');
+
+                        if (config.ios_download_url && config.ios_download_url.trim() !== '') {
+                            iosLink.href = config.ios_download_url;
+                            iosLink.style.display = 'flex';
+                        } else {
+                            iosLink.style.display = 'none';
+                        }
+
+                        if (config.android_download_url && config.android_download_url.trim() !== '') {
+                            androidLink.href = config.android_download_url;
+                            androidLink.style.display = 'flex';
+                        } else {
+                            androidLink.style.display = 'none';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading app config:', error);
+            } finally {
+                // Remove loading state
+                document.getElementById('content').classList.remove('loading');
+            }
+        }
+
+        // Load config when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('content').classList.add('loading');
+            loadAppConfig();
+        });
+    </script>
+</body>
+</html>

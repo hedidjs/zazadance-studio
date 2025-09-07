@@ -28,23 +28,18 @@ echo "📁 Creating build directory..."
 rm -rf build
 mkdir -p build
 
-echo "🔨 Building user app..."
-cd user-app || handle_error "Failed to enter user-app directory"
-
-# Skip Flutter doctor - it's not critical for build
-echo "📦 Getting user app dependencies..."
-flutter pub get || handle_error "Failed to get user app dependencies"
-
-echo "🏗️ Building user app for web..."
-flutter build web --release --verbose || handle_error "Failed to build user app"
-
-cd .. || handle_error "Failed to return to root directory"
-
-echo "📋 Copying user app to build directory..."
-if [ ! -d "user-app/build/web" ]; then
-    handle_error "User app build directory not found"
+echo "📝 Copying landing page..."
+if [ ! -f "landing-page/index.html" ]; then
+    handle_error "Landing page not found"
 fi
-cp -r user-app/build/web/* build/ || handle_error "Failed to copy user app"
+cp landing-page/index.html build/ || handle_error "Failed to copy landing page"
+
+# Copy favicon if it exists
+if [ -f "landing-page/favicon.png" ]; then
+    cp landing-page/favicon.png build/ || handle_error "Failed to copy favicon"
+fi
+
+echo "✅ Landing page copied successfully"
 
 echo "🔨 Building admin app..."
 cd admin-app || handle_error "Failed to enter admin-app directory"
@@ -73,7 +68,7 @@ EOF
 
 echo "✅ Build complete!"
 echo "📊 Build summary:"
-echo "   - User app files: $(ls build/ | wc -l) items"
+echo "   - Landing page files: $(ls build/*.html | wc -l) HTML files"
 echo "   - Admin app files: $(ls build/admin/ | wc -l) items"
 echo "   - Total build size: $(du -sh build/)"
 
