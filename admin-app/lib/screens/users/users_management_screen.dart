@@ -37,6 +37,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
           .select('*')
           .order('created_at', ascending: false);
 
+
       setState(() {
         _users = List<Map<String, dynamic>>.from(response);
         _isLoading = false;
@@ -311,13 +312,17 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
               ),
             ),
             
-            // Role and status chips
+            // Role, status, and auth provider chips
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 _buildRoleChip(role),
                 const SizedBox(height: 4),
                 _buildStatusChip(isActive),
+                if (user['auth_provider'] == 'google') ...[
+                  const SizedBox(height: 4),
+                  _buildAuthProviderChip('google'),
+                ],
               ],
             ),
             
@@ -387,6 +392,49 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
           fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
+      ),
+    );
+  }
+
+  Widget _buildAuthProviderChip(String provider) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF4285F4).withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF4285F4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(0xFF4285F4),
+            ),
+            child: const Center(
+              child: Text(
+                'G',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          const Text(
+            'Google',
+            style: TextStyle(
+              color: Color(0xFF4285F4),
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -672,25 +720,35 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
     }
   }
 
-  // Simple Supabase delete now that RLS is disabled
+  // Delete user from both auth.users and users table
   Future<bool> _deleteUserSupabase(String userId) async {
     try {
       print('Attempting Supabase delete for user: $userId');
       
-      // Use normal Supabase delete - should work now that RLS is disabled
-      final response = await _supabase
+      // First delete from our users table
+      final userResponse = await _supabase
           .from('users')
           .delete()
           .eq('id', userId)
           .select();
       
-      print('Supabase delete response: $response');
+      print('Users table delete response: $userResponse');
       
-      if (response.isNotEmpty) {
+      // Then delete from auth.users using admin API
+      try {
+        final authResponse = await _supabase.auth.admin.deleteUser(userId);
+        print('Auth delete response: $authResponse');
+      } catch (authError) {
+        print('Auth delete error (might be okay if user was created via Google): $authError');
+        // For Google users, they might not exist in auth.users table, so we continue
+      }
+      
+      // Check if users table deletion was successful
+      if (userResponse.isNotEmpty) {
         print('Delete successful! User removed from database.');
         return true;
       } else {
-        print('Delete failed - no rows affected');
+        print('Delete failed - no rows affected in users table');
         return false;
       }
     } catch (e) {

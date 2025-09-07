@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/app_config_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/auth_notifier.dart';
+import '../../services/google_auth_service.dart';
 
 class MainScaffold extends ConsumerStatefulWidget {
   final Widget child;
@@ -25,6 +27,20 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
   void initState() {
     super.initState();
     _loadUserProfile();
+    
+    // מאזין לשינויים ב-auth state
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (mounted) {
+        if (data.session?.user != null) {
+          _loadUserProfile();
+        } else {
+          setState(() {
+            _userProfile = null;
+            _isLoading = false;
+          });
+        }
+      }
+    });
   }
 
   Future<void> _loadUserProfile() async {
@@ -463,7 +479,13 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
             onPressed: () async {
               Navigator.pop(context);
               try {
-                await Supabase.instance.client.auth.signOut();
+                // התנתקות מGoogle Sign-In ומSupabase
+                await GoogleAuthService().signOut();
+                
+                // ניווט לעמוד ההתחברות וניקוי כל ההיסטוריה
+                if (context.mounted) {
+                  context.go('/login');
+                }
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(

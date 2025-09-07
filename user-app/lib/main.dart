@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'providers/app_config_provider.dart';
 import 'providers/theme_provider.dart';
+import 'services/google_auth_service.dart';
 import 'app.dart';
 
 Future<void> main() async {
@@ -23,6 +24,9 @@ Future<void> main() async {
     url: 'https://yyvoavzgapsyycjwirmg.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5dm9hdnpnYXBzeXljandpcm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyOTgyMzgsImV4cCI6MjA3MDg3NDIzOH0.IU_dW_8K-yuV1grWIWJdetU7jK-b-QDPFYp_m5iFP90',
   );
+  
+  // אתחול Google Auth Service
+  GoogleAuthService().initialize();
   
   runApp(
     const ProviderScope(

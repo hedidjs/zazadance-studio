@@ -55,7 +55,7 @@ class _ProfileSimpleScreenState extends ConsumerState<ProfileSimpleScreen> {
           .from('users')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
       if (mounted && response != null) {
         setState(() {

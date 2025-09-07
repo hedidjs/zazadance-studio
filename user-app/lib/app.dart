@@ -28,6 +28,7 @@ class AppRouter {
   static GoRouter router(WidgetRef ref) => GoRouter(
     initialLocation: '/',
     routerNeglect: true,
+    refreshListenable: ref.watch(authChangeNotifierProvider),
     redirect: (context, state) {
       final path = state.uri.path;
       
@@ -37,7 +38,8 @@ class AppRouter {
         return null; // Don't redirect, allow access
       }
       
-      final isLoggedIn = _supabase.auth.currentUser != null;
+      final user = ref.watch(authProvider);
+      final isLoggedIn = user != null;
       final isLoggingIn = path == '/login';
       final isRegistering = path == '/register';
       
