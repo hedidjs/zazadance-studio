@@ -60,9 +60,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   
-  assets:
-    - assets/images/
-    - .env
+  # No assets needed for admin app currently
 
 flutter_launcher_icons:
   web:
