@@ -3,17 +3,21 @@ set -e
 
 echo "Building ZaZa Dance for Netlify..."
 
-# Install Flutter if not available
-if ! command -v flutter &> /dev/null; then
-    echo "Flutter not found. Installing Flutter..."
-    git clone https://github.com/flutter/flutter.git -b stable --depth 1 /opt/flutter
-    export PATH="/opt/flutter/bin:$PATH"
+# Download and setup Flutter
+echo "Setting up Flutter..."
+if [ ! -d "flutter" ]; then
+    echo "Downloading Flutter..."
+    git clone https://github.com/flutter/flutter.git -b stable --depth 1
 fi
 
-# Ensure Flutter is up to date
+export PATH="$PWD/flutter/bin:$PATH"
+
+# Configure Flutter
+flutter config --no-analytics --enable-web
 flutter doctor
 
 # Create build directory
+echo "Creating build directory..."
 rm -rf build
 mkdir -p build
 
@@ -27,7 +31,7 @@ echo "Copying user app to build directory..."
 cp -r user-app/build/web/* build/
 
 echo "Building admin app..."
-cd admin-app
+cd admin-app  
 flutter pub get
 flutter build web --release
 cd ..
