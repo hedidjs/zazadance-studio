@@ -1,5 +1,5 @@
 import '../models/cart_item.dart';
-import '../services/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../exceptions/app_exceptions.dart';
 
 /// Result class for cart operations
@@ -61,7 +61,7 @@ class SupabaseCartRepository implements CartRepository {
   @override
   Future<CartOperationResult> getCartItems(String userId) async {
     try {
-      final response = await SupabaseService.client
+      final response = await Supabase.instance.client
           .from(_tableName)
           .select('''
             id, product_id, size_id, quantity, created_at, updated_at,
@@ -90,7 +90,7 @@ class SupabaseCartRepository implements CartRepository {
   }) async {
     try {
       // Check if item already exists in cart
-      final existingItems = await SupabaseService.client
+      final existingItems = await Supabase.instance.client
           .from(_tableName)
           .select('id, quantity')
           .eq('user_id', userId)
@@ -108,7 +108,7 @@ class SupabaseCartRepository implements CartRepository {
         );
       } else {
         // Add new item
-        final response = await SupabaseService.client
+        final response = await Supabase.instance.client
             .from(_tableName)
             .insert({
               'user_id': userId,
@@ -144,7 +144,7 @@ class SupabaseCartRepository implements CartRepository {
         return await removeFromCart(cartItemId);
       }
 
-      final response = await SupabaseService.client
+      final response = await Supabase.instance.client
           .from(_tableName)
           .update({'quantity': newQuantity})
           .eq('id', cartItemId)
@@ -168,7 +168,7 @@ class SupabaseCartRepository implements CartRepository {
   @override
   Future<CartOperationResult> removeFromCart(String cartItemId) async {
     try {
-      await SupabaseService.client
+      await Supabase.instance.client
           .from(_tableName)
           .delete()
           .eq('id', cartItemId);
@@ -182,7 +182,7 @@ class SupabaseCartRepository implements CartRepository {
   @override
   Future<CartOperationResult> clearCart(String userId) async {
     try {
-      await SupabaseService.client
+      await Supabase.instance.client
           .from(_tableName)
           .delete()
           .eq('user_id', userId);
@@ -196,7 +196,7 @@ class SupabaseCartRepository implements CartRepository {
   @override
   Future<int> getTotalItems(String userId) async {
     try {
-      final response = await SupabaseService.client
+      final response = await Supabase.instance.client
           .from(_tableName)
           .select('quantity')
           .eq('user_id', userId);
@@ -213,7 +213,7 @@ class SupabaseCartRepository implements CartRepository {
   @override
   Future<double> getTotalAmount(String userId) async {
     try {
-      final response = await SupabaseService.client
+      final response = await Supabase.instance.client
           .from(_tableName)
           .select('''
             quantity,

@@ -1,5 +1,5 @@
 import '../models/order.dart';
-import '../services/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../exceptions/app_exceptions.dart';
 
 /// Result class for order operations
@@ -63,7 +63,7 @@ class SupabaseOrdersRepository implements OrdersRepository {
   }) async {
     try {
       // Single optimized query with all JOINs - NO MORE N+1 PROBLEM!
-      var query = SupabaseService.client
+      var query = Supabase.instance.client
           .from(_tableName)
           .select('''
             id, order_number, user_id, status, total_amount, notes, created_at, updated_at,
@@ -104,7 +104,7 @@ class SupabaseOrdersRepository implements OrdersRepository {
   @override
   Future<OrderOperationResult> getOrder(String orderId) async {
     try {
-      final response = await SupabaseService.client
+      final response = await Supabase.instance.client
           .from(_tableName)
           .select('''
             id, order_number, user_id, status, total_amount, notes, created_at, updated_at,
@@ -128,7 +128,7 @@ class SupabaseOrdersRepository implements OrdersRepository {
   @override
   Future<OrderOperationResult> updateOrderStatus(String orderId, OrderStatus newStatus) async {
     try {
-      final response = await SupabaseService.client
+      final response = await Supabase.instance.client
           .from(_tableName)
           .update({
             'status': newStatus.value,
@@ -159,7 +159,7 @@ class SupabaseOrdersRepository implements OrdersRepository {
   @override
   Future<OrderOperationResult> updateOrderNotes(String orderId, String notes) async {
     try {
-      final response = await SupabaseService.client
+      final response = await Supabase.instance.client
           .from(_tableName)
           .update({
             'notes': notes,
@@ -190,7 +190,7 @@ class SupabaseOrdersRepository implements OrdersRepository {
   @override
   Future<int> getTotalOrdersCount({OrderStatus? statusFilter}) async {
     try {
-      var query = SupabaseService.client
+      var query = Supabase.instance.client
           .from(_tableName)
           .select('id', const FetchOptions(count: CountOption.exact));
 
@@ -208,7 +208,7 @@ class SupabaseOrdersRepository implements OrdersRepository {
   /// Get order statistics (for dashboard)
   Future<Map<String, int>> getOrderStatistics() async {
     try {
-      final response = await SupabaseService.client
+      final response = await Supabase.instance.client
           .rpc('get_order_statistics'); // This function should be created in database
 
       return Map<String, int>.from(response);

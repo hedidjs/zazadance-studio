@@ -1,15 +1,53 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_view/photo_view.dart';
+import 'package:photo_view/photo_view_gallery.dart';
+import 'package:shared_core/models/gallery_image.dart';
+import '../favorites/favorites_service.dart';
 
-class PhotoViewScreen extends StatelessWidget {
+class PhotoViewScreen extends ConsumerStatefulWidget {
   final String imageUrl;
   final String title;
+  final GalleryImage? image;
+  final List<GalleryImage>? images;
+  final int? initialIndex;
 
   const PhotoViewScreen({
     super.key,
     required this.imageUrl,
     required this.title,
+    this.image,
+    this.images,
+    this.initialIndex,
   });
+
+  @override
+  ConsumerState<PhotoViewScreen> createState() => _PhotoViewScreenState();
+}
+
+class _PhotoViewScreenState extends ConsumerState<PhotoViewScreen> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex ?? 0;
+    _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  GalleryImage get currentImage {
+    if (widget.images != null && widget.images!.isNotEmpty) {
+      return widget.images![_currentIndex];
+    }
+    return widget.image!;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +56,19 @@ class PhotoViewScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.black.withOpacity(0.5),
         elevation: 0,
-        title: Text(
-          title,
-          style: const TextStyle(color: Colors.white),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              currentImage.titleHe,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            if (widget.images != null && widget.images!.length > 1)
+              Text(
+                '${_currentIndex + 1} / ${widget.images!.length}',
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+          ],
         ),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
@@ -32,48 +80,112 @@ class PhotoViewScreen extends StatelessWidget {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.favorite_outline, color: Colors.white),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('נוסף למועדפים'),
-                  backgroundColor: Color(0xFF4CAF50),
+          Consumer(
+            builder: (context, ref, child) {
+              final favoritesNotifier = ref.watch(favoritesNotifierProvider.notifier);
+              final favoriteStates = ref.watch(favoritesNotifierProvider);
+              final key = 'gallery_${currentImage.id}';
+              final isFavorite = favoriteStates[key] ?? false;
+              
+              return IconButton(
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_outline, 
+                  color: isFavorite ? const Color(0xFFE91E63) : Colors.white,
                 ),
+                onPressed: () async {
+                  await favoritesNotifier.toggleFavorite('gallery', currentImage.id);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(isFavorite 
+                          ? 'הוסר מהמועדפים' 
+                          : 'נוסף למועדפים'),
+                      backgroundColor: const Color(0xFF4CAF50),
+                      duration: const Duration(seconds: 1),
+                    ),
+                  );
+                },
               );
             },
           ),
         ],
       ),
-      body: PhotoView(
-        imageProvider: NetworkImage(imageUrl),
-        minScale: PhotoViewComputedScale.contained,
-        maxScale: PhotoViewComputedScale.covered * 2.0,
-        initialScale: PhotoViewComputedScale.contained,
-        backgroundDecoration: const BoxDecoration(
-          color: Colors.black,
-        ),
-        errorBuilder: (context, error, stackTrace) => const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.white60,
-              ),
-              SizedBox(height: 16),
-              Text(
-                'שגיאה בטעינת התמונה',
-                style: TextStyle(
-                  color: Colors.white60,
-                  fontSize: 16,
+      body: widget.images != null && widget.images!.length > 1
+          ? PhotoViewGallery.builder(
+              scrollPhysics: const BouncingScrollPhysics(),
+              builder: (BuildContext context, int index) {
+                final image = widget.images![index];
+                return PhotoViewGalleryPageOptions(
+                  imageProvider: NetworkImage(image.imageUrl),
+                  initialScale: PhotoViewComputedScale.contained,
+                  minScale: PhotoViewComputedScale.contained,
+                  maxScale: PhotoViewComputedScale.covered * 2.0,
+                  errorBuilder: (context, error, stackTrace) => const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.white60,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'שגיאה בטעינת התמונה',
+                          style: TextStyle(
+                            color: Colors.white60,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+              itemCount: widget.images!.length,
+              loadingBuilder: (context, event) => const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFFE91E63),
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
+              backgroundDecoration: const BoxDecoration(
+                color: Colors.black,
+              ),
+              pageController: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+            )
+          : PhotoView(
+              imageProvider: NetworkImage(widget.imageUrl),
+              minScale: PhotoViewComputedScale.contained,
+              maxScale: PhotoViewComputedScale.covered * 2.0,
+              initialScale: PhotoViewComputedScale.contained,
+              backgroundDecoration: const BoxDecoration(
+                color: Colors.black,
+              ),
+              errorBuilder: (context, error, stackTrace) => const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.white60,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'שגיאה בטעינת התמונה',
+                      style: TextStyle(
+                        color: Colors.white60,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 }

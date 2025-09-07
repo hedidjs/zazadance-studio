@@ -164,6 +164,16 @@ class AdminLayout extends ConsumerWidget {
                   isActive: currentLocation == '/updates',
                 ),
                 
+                // הודעות ברוכים הבאים
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.waving_hand_outlined,
+                  activeIcon: Icons.waving_hand,
+                  title: 'הודעות ברוכים הבאים',
+                  path: '/welcome',
+                  isActive: currentLocation == '/welcome',
+                ),
+                
                 // ניהול קבוצות
                 _buildNavItem(
                   context: context,
@@ -454,6 +464,14 @@ class AdminLayout extends ConsumerWidget {
                 ),
                 _buildNavItem(
                   context: context,
+                  icon: Icons.waving_hand_outlined,
+                  activeIcon: Icons.waving_hand,
+                  title: 'הודעות ברוכים הבאים',
+                  path: '/welcome',
+                  isActive: currentLocation == '/welcome',
+                ),
+                _buildNavItem(
+                  context: context,
                   icon: Icons.group_outlined,
                   activeIcon: Icons.group,
                   title: 'ניהול קבוצות',
@@ -707,6 +725,8 @@ class AdminLayout extends ConsumerWidget {
         return 'ניהול גלריה';
       case '/updates':
         return 'ניהול עדכונים';
+      case '/welcome':
+        return 'הודעות ברוכים הבאים';
       case '/store':
         return 'ניהול חנות';
       case '/orders':
@@ -738,6 +758,8 @@ class AdminLayout extends ConsumerWidget {
         return 'ניהול תמונות ואלבומים';
       case '/updates':
         return 'פרסום עדכונים והודעות';
+      case '/welcome':
+        return 'עריכת הודעות ברוכים הבאים';
       case '/store':
         return 'ניהול קטגוריות ומוצרים';
       case '/orders':

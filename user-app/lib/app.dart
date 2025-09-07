@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'features/home/home_screen.dart';
 import 'features/tutorials/tutorials_screen.dart';
-import 'features/gallery/gallery_screen.dart';
+import 'features/gallery/gallery_albums_screen.dart';
 import 'features/updates/updates_screen.dart';
 import 'features/store/store_screen.dart';
 import 'features/cart/cart_screen.dart';
@@ -88,7 +88,7 @@ class AppRouter {
           // גלריה
           GoRoute(
             path: '/gallery',
-            builder: (context, state) => const GalleryScreen(),
+            builder: (context, state) => const GalleryAlbumsScreen(),
           ),
           
           // מדריכים

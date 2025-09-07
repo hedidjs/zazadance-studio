@@ -8,7 +8,7 @@ class GalleryImage extends BaseModel {
   final String? descriptionEn;
   final String imageUrl;
   final String? thumbnailUrl;
-  final String? category;
+  final String? albumId;
   final bool isActive;
 
   const GalleryImage({
@@ -21,7 +21,7 @@ class GalleryImage extends BaseModel {
     this.descriptionEn,
     required this.imageUrl,
     this.thumbnailUrl,
-    this.category,
+    this.albumId,
     this.isActive = true,
   }) : super(
           id: id,
@@ -38,9 +38,9 @@ class GalleryImage extends BaseModel {
       titleEn: json['title_en'],
       descriptionHe: json['description_he'],
       descriptionEn: json['description_en'],
-      imageUrl: json['image_url'] ?? '',
+      imageUrl: json['media_url'] ?? json['image_url'] ?? '',
       thumbnailUrl: json['thumbnail_url'],
-      category: json['category'],
+      albumId: json['album_id'] ?? json['category_id'] ?? json['category'],
       isActive: json['is_active'] ?? true,
     );
   }
@@ -55,9 +55,9 @@ class GalleryImage extends BaseModel {
       'title_en': titleEn,
       'description_he': descriptionHe,
       'description_en': descriptionEn,
-      'image_url': imageUrl,
+      'media_url': imageUrl,
       'thumbnail_url': thumbnailUrl,
-      'category': category,
+      'album_id': albumId,
       'is_active': isActive,
     };
   }
@@ -73,7 +73,7 @@ class GalleryImage extends BaseModel {
     String? descriptionEn,
     String? imageUrl,
     String? thumbnailUrl,
-    String? category,
+    String? albumId,
     bool? isActive,
   }) {
     return GalleryImage(
@@ -86,7 +86,7 @@ class GalleryImage extends BaseModel {
       descriptionEn: descriptionEn ?? this.descriptionEn,
       imageUrl: imageUrl ?? this.imageUrl,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
-      category: category ?? this.category,
+      albumId: albumId ?? this.albumId,
       isActive: isActive ?? this.isActive,
     );
   }
@@ -118,6 +118,6 @@ class GalleryImage extends BaseModel {
   /// Check if this image has a thumbnail
   bool get hasThumbnail => thumbnailUrl != null && thumbnailUrl!.isNotEmpty;
 
-  /// Get formatted category name
-  String get displayCategory => category ?? 'כללי';
+  /// Get formatted album ID
+  String get displayAlbumId => albumId ?? 'כללי';
 }

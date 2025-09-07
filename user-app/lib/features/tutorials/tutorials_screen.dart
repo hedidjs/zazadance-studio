@@ -82,6 +82,26 @@ class _TutorialsScreenState extends ConsumerState<TutorialsScreen> {
     ).toList();
   }
 
+  String? _getYoutubeThumbnail(String? videoUrl) {
+    if (videoUrl == null) return null;
+    
+    // Extract YouTube video ID from various URL formats
+    final patterns = [
+      RegExp(r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)'),
+      RegExp(r'youtube\.com\/v\/([^&\n?#]+)'),
+    ];
+    
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(videoUrl);
+      if (match != null) {
+        final videoId = match.group(1);
+        return 'https://img.youtube.com/vi/$videoId/maxresdefault.jpg';
+      }
+    }
+    
+    return null;
+  }
+
   Future<void> _shareVideo(Map<String, dynamic> tutorial) async {
     try {
       final title = tutorial['title_he'] ?? 'מדריך ריקוד';
@@ -319,6 +339,40 @@ class _TutorialsScreenState extends ConsumerState<TutorialsScreen> {
             child: Stack(
               alignment: Alignment.center,
               children: [
+                // תמונת רקע YouTube thumbnail
+                () {
+                  final thumbnailUrl = tutorial['thumbnail_url'] ?? 
+                      _getYoutubeThumbnail(tutorial['video_url']);
+                  
+                  return thumbnailUrl != null
+                      ? ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12),
+                          ),
+                          child: Container(
+                            width: double.infinity,
+                            height: double.infinity,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: NetworkImage(thumbnailUrl),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        )
+                      : Container();
+                }(),
+                // שכבת שקיפות כהה
+                Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                    color: Colors.black.withOpacity(0.3),
+                  ),
+                ),
                 // אייקון YouTube
                 Container(
                   padding: const EdgeInsets.all(12),

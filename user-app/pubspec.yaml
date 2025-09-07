@@ -2,7 +2,7 @@ name: dance_studio_app
 description: ZaZa Dance
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0+25
 
 environment:
   sdk: ^3.9.0
@@ -41,6 +41,7 @@ dependencies:
   image_picker: ^1.0.8
   visibility_detector: ^0.4.0+2
   flutter_dotenv: ^5.1.0
+  shared_preferences: ^2.3.3
   
   # Icons
   cupertino_icons: ^1.0.8

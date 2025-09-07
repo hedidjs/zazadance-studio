@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_core/repositories/gallery_repository.dart';
 import 'package:shared_core/utils/pagination_result.dart';
 import 'package:shared_core/models/gallery_image.dart';
@@ -14,27 +16,46 @@ class GalleryScreen extends ConsumerStatefulWidget {
   ConsumerState<GalleryScreen> createState() => _GalleryScreenState();
 }
 
-class _GalleryScreenState extends ConsumerState<GalleryScreen> {
+class _GalleryScreenState extends ConsumerState<GalleryScreen>
+    with TickerProviderStateMixin {
   final _galleryRepository = SupabaseGalleryRepository();
   
   PaginationResult<GalleryImage>? _paginationResult;
-  List<String> _categories = [];
+  List<Map<String, String>> _categories = [];
   String? _selectedCategory;
   bool _isLoading = true;
   bool _isLoadingMore = false;
   final ScrollController _scrollController = ScrollController();
+  
+  // Zoom state
+  final TransformationController _transformationController = 
+      TransformationController();
+  int _crossAxisCount = 3;
+  double _zoomLevel = 1.0;
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
     _loadGalleryData();
     _loadCategories();
     _scrollController.addListener(_onScroll);
+    _loadUserPreferences();
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _transformationController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -146,6 +167,54 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
     }
   }
 
+  Future<void> _loadUserPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _crossAxisCount = prefs.getInt('gallery_columns') ?? 3;
+    });
+  }
+
+  Future<void> _saveUserPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('gallery_columns', _crossAxisCount);
+  }
+
+  void _onInteractionUpdate(ScaleUpdateDetails details) {
+    final scale = details.scale;
+    
+    // Calculate new column count based on scale
+    int newCrossAxisCount;
+    if (scale < 0.7) {
+      newCrossAxisCount = 1; // Zoom in to 1 image
+    } else if (scale < 0.8) {
+      newCrossAxisCount = 2;
+    } else if (scale < 1.2) {
+      newCrossAxisCount = 3; // Default
+    } else if (scale < 1.5) {
+      newCrossAxisCount = 4;
+    } else if (scale < 1.8) {
+      newCrossAxisCount = 5;
+    } else if (scale < 2.2) {
+      newCrossAxisCount = 6;
+    } else {
+      newCrossAxisCount = 7; // Zoom out to 7 columns (max ~50 images)
+    }
+
+    if (newCrossAxisCount != _crossAxisCount) {
+      HapticFeedback.selectionClick();
+      setState(() {
+        _crossAxisCount = newCrossAxisCount;
+      });
+      _animationController.reset();
+      _animationController.forward();
+      _saveUserPreferences();
+    }
+  }
+
+  void _onInteractionEnd(ScaleEndDetails details) {
+    // Don't reset the transformation - let the user keep their zoom level
+    // The column change already happened in _onInteractionUpdate
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -175,7 +244,24 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
               child: Column(
                 children: [
                   if (_categories.isNotEmpty) _buildCategoriesSection(),
-                  Expanded(child: _buildGalleryGrid()),
+                  Expanded(
+                    child: InteractiveViewer(
+                      transformationController: _transformationController,
+                      onInteractionUpdate: _onInteractionUpdate,
+                      onInteractionEnd: _onInteractionEnd,
+                      minScale: 0.5,
+                      maxScale: 3.0,
+                      child: AnimatedBuilder(
+                        animation: _scaleAnimation,
+                        builder: (context, child) {
+                          return Transform.scale(
+                            scale: _scaleAnimation.value,
+                            child: _buildGalleryGrid(),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -208,15 +294,17 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
           }
           
           final category = _categories[index - 1];
-          final isSelected = _selectedCategory == category;
+          final categoryId = category['id']!;
+          final categoryName = category['name']!;
+          final isSelected = _selectedCategory == categoryId;
           
           return _buildCategoryChip(
-            name: category,
+            name: categoryName,
             color: const Color(0xFFE91E63), // צבע אחיד לכל הקטגוריות
             isSelected: isSelected,
             onTap: () {
               setState(() {
-                _selectedCategory = category;
+                _selectedCategory = categoryId;
               });
               _loadGalleryData();
             },
@@ -292,10 +380,10 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
     return GridView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(4),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 4,
-        mainAxisSpacing: 4,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: _crossAxisCount,
+        crossAxisSpacing: _crossAxisCount == 1 ? 0 : 4,
+        mainAxisSpacing: _crossAxisCount == 1 ? 0 : 4,
         childAspectRatio: 1.0,
       ),
       itemCount: _paginationResult!.items.length + (_isLoadingMore ? 1 : 0),
@@ -322,137 +410,51 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
             builder: (context) => PhotoViewScreen(
               imageUrl: image.imageUrl,
               title: image.titleHe,
+              image: image,
             ),
           ),
         );
       },
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E),
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 3,
-              offset: const Offset(0, 1),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(_crossAxisCount == 1 ? 0 : 8),
+          boxShadow: _crossAxisCount == 1 
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ],
         ),
-        child: Stack(
-          children: [
-            // תמונה עם caching
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: CachedNetworkImage(
-                imageUrl: image.getDisplayImageUrl(preferThumbnail: true),
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: Colors.grey[800],
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFFE91E63),
-                      strokeWidth: 2,
-                    ),
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[800],
-                  child: const Center(
-                    child: Icon(
-                      Icons.photo,
-                      size: 30,
-                      color: Colors.white54,
-                    ),
-                  ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(_crossAxisCount == 1 ? 0 : 8),
+          child: CachedNetworkImage(
+            imageUrl: image.getDisplayImageUrl(preferThumbnail: _crossAxisCount > 3),
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Container(
+              color: Colors.grey[800],
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFFE91E63),
+                  strokeWidth: 2,
                 ),
               ),
             ),
-            
-            // Gradient overlay
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.6),
-                  ],
+            errorWidget: (context, url, error) => Container(
+              color: Colors.grey[800],
+              child: const Center(
+                child: Icon(
+                  Icons.photo,
+                  size: 30,
+                  color: Colors.white54,
                 ),
               ),
             ),
-            
-            // כפתור מועדפים
-            Positioned(
-              top: 6,
-              left: 6,
-              child: Consumer(
-                builder: (context, ref, child) {
-                  final favoritesNotifier = ref.watch(favoritesNotifierProvider.notifier);
-                  final favoriteStates = ref.watch(favoritesNotifierProvider);
-                  final key = 'gallery_${image.id}';
-                  final isFavorite = favoriteStates[key] ?? false;
-                  
-                  return GestureDetector(
-                    onTap: () async {
-                      await favoritesNotifier.toggleFavorite('gallery', image.id);
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(isFavorite 
-                                ? 'הוסר מהמועדפים' 
-                                : 'נוסף למועדפים'),
-                            backgroundColor: const Color(0xFF4CAF50),
-                            duration: const Duration(seconds: 1),
-                          ),
-                        );
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        isFavorite ? Icons.star : Icons.star_outline,
-                        color: isFavorite ? const Color(0xFFE91E63) : Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            
-            // כותרת התמונה
-            if (image.titleHe.isNotEmpty)
-              Positioned(
-                bottom: 6,
-                left: 6,
-                right: 6,
-                child: Text(
-                  image.titleHe,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        offset: Offset(0, 1),
-                        blurRadius: 2,
-                        color: Colors.black,
-                      ),
-                    ],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );

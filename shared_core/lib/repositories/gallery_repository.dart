@@ -1,5 +1,6 @@
 import '../models/gallery_image.dart';
-import '../services/supabase_service.dart';
+import '../models/gallery_album.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../utils/pagination_result.dart';
 import '../exceptions/app_exceptions.dart';
 
@@ -9,22 +10,26 @@ class GalleryOperationResult {
   final String? errorMessage;
   final GalleryImage? image;
   final PaginationResult<GalleryImage>? images;
+  final List<GalleryAlbum>? albums;
 
   const GalleryOperationResult({
     required this.success,
     this.errorMessage,
     this.image,
     this.images,
+    this.albums,
   });
 
   factory GalleryOperationResult.success({
     GalleryImage? image,
     PaginationResult<GalleryImage>? images,
+    List<GalleryAlbum>? albums,
   }) {
     return GalleryOperationResult(
       success: true,
       image: image,
       images: images,
+      albums: albums,
     );
   }
 
@@ -50,11 +55,15 @@ abstract class GalleryRepository {
   Future<GalleryOperationResult> updateGalleryImage(String imageId, GalleryImage updatedImage);
   Future<GalleryOperationResult> deleteGalleryImage(String imageId);
   Future<int> getTotalGalleryImagesCount({String? category});
+  
+  // Album methods
+  Future<GalleryOperationResult> getGalleryAlbums();
 }
 
 /// Supabase implementation of GalleryRepository with pagination
 class SupabaseGalleryRepository implements GalleryRepository {
   static const String _tableName = 'gallery_images';
+  static const String _albumsTableName = 'gallery_albums';
 
   @override
   Future<GalleryOperationResult> getGalleryImages({
@@ -67,13 +76,13 @@ class SupabaseGalleryRepository implements GalleryRepository {
       final pagination = PaginationParams(page: page, pageSize: pageSize);
       
       // Build query with filters
-      var query = SupabaseService.client
+      var query = Supabase.instance.client
           .from(_tableName)
-          .select('id, title_he, title_en, description_he, description_en, image_url, thumbnail_url, category, is_active, created_at, updated_at');
+          .select('id, title_he, title_en, description_he, description_en, media_url, thumbnail_url, album_id, is_active, created_at, updated_at');
 
       // Apply filters
       if (category != null && category.isNotEmpty) {
-        query = query.eq('category', category);
+        query = query.eq('album_id', category);
       }
 
       if (searchQuery != null && searchQuery.trim().isNotEmpty) {
@@ -83,21 +92,29 @@ class SupabaseGalleryRepository implements GalleryRepository {
       // Only show active images
       query = query.eq('is_active', true);
 
-      // Get total count for pagination
-      final countQuery = SupabaseService.client
-          .from(_tableName)
-          .select('id', const FetchOptions(count: CountOption.exact));
+      // Get total count for the specific category
+      int totalCount = 0;
+      try {
+        var countQuery = Supabase.instance.client
+            .from(_tableName)
+            .select('id')
+            .eq('is_active', true);
+        
+        // Apply category filter if provided
+        if (category != null && category.isNotEmpty) {
+          countQuery = countQuery.eq('album_id', category);
+        }
+        
+        if (searchQuery != null && searchQuery.trim().isNotEmpty) {
+          countQuery = countQuery.or('title_he.ilike.%$searchQuery%,title_en.ilike.%$searchQuery%');
+        }
+        
+        final countResponse = await countQuery;
+        totalCount = countResponse.length;
+      } catch (e) {
+        totalCount = 0;
+      }
       
-      if (category != null && category.isNotEmpty) {
-        countQuery.eq('category', category);
-      }
-      if (searchQuery != null && searchQuery.trim().isNotEmpty) {
-        countQuery.or('title_he.ilike.%$searchQuery%,title_en.ilike.%$searchQuery%');
-      }
-      countQuery.eq('is_active', true);
-
-      final countResponse = await countQuery;
-      final totalCount = countResponse.count ?? 0;
 
       // Apply pagination and ordering
       final response = await query
@@ -124,7 +141,7 @@ class SupabaseGalleryRepository implements GalleryRepository {
   @override
   Future<GalleryOperationResult> getGalleryImage(String imageId) async {
     try {
-      final response = await SupabaseService.client
+      final response = await Supabase.instance.client
           .from(_tableName)
           .select('*')
           .eq('id', imageId)
@@ -140,7 +157,7 @@ class SupabaseGalleryRepository implements GalleryRepository {
   @override
   Future<GalleryOperationResult> uploadGalleryImage(GalleryImage image) async {
     try {
-      final response = await SupabaseService.client
+      final response = await Supabase.instance.client
           .from(_tableName)
           .insert(image.toJson())
           .select()
@@ -156,7 +173,7 @@ class SupabaseGalleryRepository implements GalleryRepository {
   @override
   Future<GalleryOperationResult> updateGalleryImage(String imageId, GalleryImage updatedImage) async {
     try {
-      final response = await SupabaseService.client
+      final response = await Supabase.instance.client
           .from(_tableName)
           .update({
             ...updatedImage.toJson(),
@@ -176,7 +193,7 @@ class SupabaseGalleryRepository implements GalleryRepository {
   @override
   Future<GalleryOperationResult> deleteGalleryImage(String imageId) async {
     try {
-      await SupabaseService.client
+      await Supabase.instance.client
           .from(_tableName)
           .delete()
           .eq('id', imageId);
@@ -190,40 +207,96 @@ class SupabaseGalleryRepository implements GalleryRepository {
   @override
   Future<int> getTotalGalleryImagesCount({String? category}) async {
     try {
-      var query = SupabaseService.client
+      var query = Supabase.instance.client
           .from(_tableName)
-          .select('id', const FetchOptions(count: CountOption.exact))
+          .select('*')
           .eq('is_active', true);
 
       if (category != null && category.isNotEmpty) {
-        query = query.eq('category', category);
+        query = query.eq('album_id', category);
       }
 
       final response = await query;
-      return response.count ?? 0;
+      return response.length;
     } catch (e) {
       throw DatabaseException('Failed to get gallery images count: ${e.toString()}');
     }
   }
 
-  /// Get gallery categories for filtering
-  Future<List<String>> getGalleryCategories() async {
+  /// Get gallery albums for filtering
+  Future<List<Map<String, String>>> getGalleryAlbumsForFiltering() async {
     try {
-      final response = await SupabaseService.client
+      // Get unique album IDs from gallery_images
+      final usedAlbumsResponse = await Supabase.instance.client
           .from(_tableName)
-          .select('category')
+          .select('album_id')
           .eq('is_active', true)
-          .not('category', 'is', null);
+          .not('album_id', 'is', null);
 
-      final categories = response
-          .map<String>((row) => row['category'] as String)
+      if (usedAlbumsResponse.isEmpty) return [];
+
+      final albumIds = usedAlbumsResponse
+          .map<String>((row) => row['album_id'] as String)
           .toSet()
           .toList();
+
+      // Get album names from gallery_albums table
+      final albumsResponse = await Supabase.instance.client
+          .from('gallery_albums')
+          .select('id, name_he')
+          .inFilter('id', albumIds)
+          .eq('is_active', true);
+
+      final albums = albumsResponse
+          .map<Map<String, String>>((row) => {
+            'id': row['id'] as String,
+            'name': row['name_he'] as String,
+          })
+          .toList();
       
-      categories.sort();
-      return categories;
+      // Sort by name
+      albums.sort((a, b) => a['name']!.compareTo(b['name']!));
+      return albums;
     } catch (e) {
       return [];
+    }
+  }
+
+  @override
+  Future<GalleryOperationResult> getGalleryAlbums() async {
+    try {
+      // Get albums with image counts using manual query
+      final albumsResponse = await Supabase.instance.client
+          .from(_albumsTableName)
+          .select('id, name_he, description_he, created_at, updated_at, is_active, cover_image_url')
+          .eq('is_active', true)
+          .order('name_he');
+
+      final albums = <GalleryAlbum>[];
+      for (final albumData in albumsResponse) {
+        // Count images for this album
+        final imageCountResponse = await Supabase.instance.client
+            .from(_tableName)
+            .select('id')
+            .eq('album_id', albumData['id'])
+            .eq('is_active', true);
+
+        final album = GalleryAlbum(
+          id: albumData['id'],
+          createdAt: DateTime.parse(albumData['created_at']),
+          updatedAt: DateTime.parse(albumData['updated_at'] ?? albumData['created_at']),
+          name: albumData['name_he'] ?? '',
+          description: albumData['description_he'],
+          color: '#E91E63', // Default color since gallery_albums table doesn't have color column
+          imageCount: imageCountResponse.length,
+          isActive: albumData['is_active'] ?? true,
+        );
+        albums.add(album);
+      }
+
+      return GalleryOperationResult.success(albums: albums);
+    } catch (e) {
+      return GalleryOperationResult.failure('Failed to load gallery albums: ${e.toString()}');
     }
   }
 }

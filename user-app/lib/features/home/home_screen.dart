@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_core/models/gallery_image.dart';
 import '../../providers/theme_provider.dart';
+import '../gallery/photo_view_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -19,6 +21,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Map<String, dynamic>> _recentTutorials = [];
   List<Map<String, dynamic>> _recentGallery = [];
   Map<String, dynamic>? _userProfile;
+  Map<String, dynamic>? _welcomeMessage;
   bool _isLoading = true;
 
   @override
@@ -73,12 +76,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           .order('created_at', ascending: false)
           .limit(6);
 
+      // טעינת הודעת ברכה
+      Map<String, dynamic>? welcomeMessage;
+      try {
+        final welcomeResponse = await _supabase
+            .from('welcome_messages')
+            .select('*')
+            .eq('is_active', true)
+            .order('created_at', ascending: false)
+            .limit(1);
+        
+        if (welcomeResponse.isNotEmpty) {
+          welcomeMessage = welcomeResponse.first;
+        }
+      } catch (e) {
+        // Fallback if table doesn't exist yet
+        welcomeMessage = {
+          'message_he': 'ברוכים הבאים לסטודיו זאזא דאנס',
+          'message_en': 'Welcome to ZaZa Dance Studio',
+          'background_color': '#2D1B69',
+          'text_color': '#FFFFFF',
+          'border_radius': 16,
+          'has_border': true,
+          'border_color': '#E91E63',
+          'border_width': 2,
+          'padding_horizontal': 20,
+          'padding_vertical': 16,
+          'margin_horizontal': 16,
+          'margin_vertical': 8,
+          'font_size': 18,
+          'font_weight': 'bold',
+          'text_align': 'center',
+        };
+      }
+
       if (mounted) {
         setState(() {
           _userProfile = userProfile;
           _recentUpdates = List<Map<String, dynamic>>.from(updatesResponse);
           _recentTutorials = List<Map<String, dynamic>>.from(tutorialsResponse);
           _recentGallery = List<Map<String, dynamic>>.from(galleryResponse);
+          _welcomeMessage = welcomeMessage;
           _isLoading = false;
         });
       }
@@ -121,6 +159,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               _buildWelcomeSection(),
               
               const SizedBox(height: 24),
+              
+              // הודעת ברוכים הבאים
+              if (_welcomeMessage != null) _buildWelcomeMessageSection(),
+              
+              if (_welcomeMessage != null) const SizedBox(height: 24),
               
               // עדכונים אחרונים
               _buildUpdatesSection(),
@@ -235,6 +278,80 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildWelcomeMessageSection() {
+    if (_welcomeMessage == null) return const SizedBox.shrink();
+    
+    final message = _welcomeMessage!;
+    
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.symmetric(
+        horizontal: (message['margin_horizontal'] ?? 16).toDouble(),
+        vertical: (message['margin_vertical'] ?? 8).toDouble(),
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: (message['padding_horizontal'] ?? 20).toDouble(),
+        vertical: (message['padding_vertical'] ?? 16).toDouble(),
+      ),
+      decoration: BoxDecoration(
+        color: Color(int.parse(message['background_color']?.replaceFirst('#', '0xFF') ?? '0xFF2D1B69')),
+        borderRadius: BorderRadius.circular((message['border_radius'] ?? 16).toDouble()),
+        border: message['has_border'] == true
+            ? Border.all(
+                color: Color(int.parse(message['border_color']?.replaceFirst('#', '0xFF') ?? '0xFFE91E63')),
+                width: (message['border_width'] ?? 2).toDouble(),
+              )
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Text(
+        message['message_he'] ?? 'ברוכים הבאים לסטודיו זאזא דאנס',
+        textAlign: _getTextAlign(message['text_align']),
+        style: TextStyle(
+          color: Color(int.parse(message['text_color']?.replaceFirst('#', '0xFF') ?? '0xFFFFFFFF')),
+          fontSize: (message['font_size'] ?? 18).toDouble(),
+          fontWeight: _getFontWeight(message['font_weight']),
+        ),
+      ),
+    );
+  }
+
+  TextAlign _getTextAlign(String? alignment) {
+    switch (alignment) {
+      case 'left':
+        return TextAlign.left;
+      case 'right':
+        return TextAlign.right;
+      case 'center':
+        return TextAlign.center;
+      default:
+        return TextAlign.center;
+    }
+  }
+
+  FontWeight _getFontWeight(String? weight) {
+    switch (weight) {
+      case 'bold':
+        return FontWeight.bold;
+      case 'normal':
+        return FontWeight.normal;
+      case 'w500':
+        return FontWeight.w500;
+      case 'w600':
+        return FontWeight.w600;
+      case 'w700':
+        return FontWeight.w700;
+      default:
+        return FontWeight.bold;
+    }
   }
 
   Widget _buildUpdatesSection() {
@@ -400,28 +517,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 borderRadius: const BorderRadius.vertical(
                                   top: Radius.circular(12),
                                 ),
-                                child: tutorial['thumbnail_url'] != null
-                                    ? CachedNetworkImage(
-                                        imageUrl: tutorial['thumbnail_url'],
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, url) => Container(
-                                          color: Colors.grey[800],
-                                          child: const Center(
-                                            child: CircularProgressIndicator(
-                                              color: Color(0xFFE91E63),
-                                              strokeWidth: 2,
+                                child: () {
+                                  final thumbnailUrl = tutorial['thumbnail_url'] ?? 
+                                      _getYoutubeThumbnail(tutorial['video_url']);
+                                  
+                                  return thumbnailUrl != null
+                                      ? CachedNetworkImage(
+                                          imageUrl: thumbnailUrl,
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) => Container(
+                                            color: Colors.grey[800],
+                                            child: const Center(
+                                              child: CircularProgressIndicator(
+                                                color: Color(0xFFE91E63),
+                                                strokeWidth: 2,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        errorWidget: (context, url, error) => Container(
+                                          errorWidget: (context, url, error) => Container(
+                                            color: Colors.grey[800],
+                                            child: const Center(
+                                              child: Icon(
+                                                Icons.video_library,
+                                                color: Colors.grey,
+                                                size: 30,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : Container(
                                           color: Colors.grey[800],
-                                        ),
-                                      )
-                                    : Container(
-                                        color: Colors.grey[800],
-                                      ),
+                                          child: const Center(
+                                            child: Icon(
+                                              Icons.video_library,
+                                              color: Colors.grey,
+                                              size: 30,
+                                            ),
+                                          ),
+                                        );
+                                }(),
                               ),
                               const Center(
                                 child: Icon(
@@ -525,7 +661,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             itemBuilder: (context, index) {
               final image = _recentGallery[index];
               return InkWell(
-                onTap: () => context.go('/gallery'),
+                onTap: () {
+                  // Create GalleryImage object from available data
+                  final galleryImage = GalleryImage(
+                    id: image['id'] ?? '',
+                    createdAt: DateTime.now(), // Placeholder since we don't have this data
+                    updatedAt: DateTime.now(), // Placeholder since we don't have this data
+                    titleHe: image['title_he'] ?? '',
+                    imageUrl: image['media_url'] ?? '',
+                    thumbnailUrl: image['thumbnail_url'],
+                  );
+                  
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => PhotoViewScreen(
+                        imageUrl: galleryImage.imageUrl,
+                        title: galleryImage.titleHe,
+                        image: galleryImage,
+                      ),
+                    ),
+                  );
+                },
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
@@ -588,6 +744,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _getExcerpt(String content) {
     if (content.length <= 100) return content;
     return '${content.substring(0, 100)}...';
+  }
+
+  String? _getYoutubeThumbnail(String? videoUrl) {
+    if (videoUrl == null) return null;
+    
+    // Extract YouTube video ID from various URL formats
+    final patterns = [
+      RegExp(r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)'),
+      RegExp(r'youtube\.com\/v\/([^&\n?#]+)'),
+    ];
+    
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(videoUrl);
+      if (match != null) {
+        final videoId = match.group(1);
+        return 'https://img.youtube.com/vi/$videoId/maxresdefault.jpg';
+      }
+    }
+    
+    return null;
   }
 
   String _formatDate(String dateStr) {
