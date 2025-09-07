@@ -277,6 +277,32 @@ class _AddTutorialDialogState extends State<AddTutorialDialog> {
     );
   }
 
+  String? _extractYouTubeVideoId(String url) {
+    try {
+      RegExp regExp = RegExp(
+        r'(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})',
+        caseSensitive: false,
+      );
+      Match? match = regExp.firstMatch(url);
+      return match?.group(1);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  String? _generateYouTubeThumbnail(String videoUrl) {
+    final videoId = _extractYouTubeVideoId(videoUrl);
+    if (videoId != null) {
+      // יוטיוב מספק תמונות ממוזערות במספר רזולוציות
+      // maxresdefault - רזולוציה גבוהה ביותר (1280x720)
+      // hqdefault - רזולוציה גבוהה (480x360)  
+      // mqdefault - רזולוציה בינונית (320x180)
+      // sddefault - רזולוציה סטנדרטית (640x480)
+      return 'https://img.youtube.com/vi/$videoId/maxresdefault.jpg';
+    }
+    return null;
+  }
+
   Future<void> _saveTutorial() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -285,12 +311,16 @@ class _AddTutorialDialogState extends State<AddTutorialDialog> {
     });
 
     try {
+      final videoUrl = _videoUrlController.text.trim();
+      final thumbnailUrl = _generateYouTubeThumbnail(videoUrl);
+      
       final tutorialData = {
         'title_he': _titleController.text.trim(),
         'description_he': _descriptionController.text.trim().isEmpty 
             ? null 
             : _descriptionController.text.trim(),
-        'video_url': _videoUrlController.text.trim(),
+        'video_url': videoUrl,
+        'thumbnail_url': thumbnailUrl,
         'category_id': _selectedCategoryId,
         'is_active': _isActive,
         'is_published': _isPublished,
