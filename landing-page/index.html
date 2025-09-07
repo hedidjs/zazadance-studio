@@ -31,11 +31,11 @@
         }
 
         .logo {
-            width: 180px;
-            height: 180px;
+            width: 300px;
+            height: 300px;
             margin: 0 auto 2rem;
             background: #1A1A1A;
-            border-radius: 20px;
+            border-radius: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -132,6 +132,11 @@
         }
 
         @media (max-width: 600px) {
+            .logo {
+                width: 250px;
+                height: 250px;
+            }
+            
             h1 {
                 font-size: 2rem;
             }
@@ -144,6 +149,13 @@
             .download-btn {
                 width: 100%;
                 max-width: 250px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .logo {
+                width: 200px;
+                height: 200px;
             }
         }
 
@@ -163,7 +175,6 @@
             <img src="" alt="לוגו האפליקציה" id="logoImage" style="display: none;">
         </div>
         
-        <h1 id="appName">טוען...</h1>
         <p class="subtitle" id="appDescription">
             טוען...
         </p>
@@ -211,9 +222,8 @@
                     if (configs.length > 0) {
                         const config = configs[0];
                         
-                        // Update page title and app name
+                        // Update page title
                         if (config.app_name) {
-                            document.getElementById('appName').textContent = config.app_name;
                             document.title = `${config.app_name} - אפליקציית הריקוד שלך`;
                         }
                         
@@ -246,14 +256,24 @@
                         const androidLink = document.getElementById('androidLink');
 
                         if (config.ios_download_url && config.ios_download_url.trim() !== '') {
-                            iosLink.href = config.ios_download_url;
+                            // Ensure the URL starts with http:// or https://
+                            let iosUrl = config.ios_download_url.trim();
+                            if (!iosUrl.startsWith('http://') && !iosUrl.startsWith('https://')) {
+                                iosUrl = 'https://' + iosUrl;
+                            }
+                            iosLink.href = iosUrl;
                             iosLink.style.display = 'flex';
                         } else {
                             iosLink.style.display = 'none';
                         }
 
                         if (config.android_download_url && config.android_download_url.trim() !== '') {
-                            androidLink.href = config.android_download_url;
+                            // Ensure the URL starts with http:// or https://
+                            let androidUrl = config.android_download_url.trim();
+                            if (!androidUrl.startsWith('http://') && !androidUrl.startsWith('https://')) {
+                                androidUrl = 'https://' + androidUrl;
+                            }
+                            androidLink.href = androidUrl;
                             androidLink.style.display = 'flex';
                         } else {
                             androidLink.style.display = 'none';
@@ -269,7 +289,6 @@
             } catch (error) {
                 console.error('Error loading app config:', error);
                 // Set fallback content
-                document.getElementById('appName').textContent = 'ZaZa Dance';
                 document.getElementById('appDescription').innerHTML = 
                     'האפליקציה המושלמת ללמידת ריקוד<br>הורידו עכשיו ותתחילו לרקוד!';
             } finally {
