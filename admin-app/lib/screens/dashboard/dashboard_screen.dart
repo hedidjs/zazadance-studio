@@ -30,7 +30,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
       // טעינת סטטיסטיקות בסיסיות
       final results = await Future.wait([
-        _supabase.from('user_profiles').select('*'),
+        _supabase.from('users').select('*'),
         _supabase.from('tutorials').select('*'),
         _supabase.from('gallery_images').select('*'),
         _supabase.from('news_updates').select('*'),
