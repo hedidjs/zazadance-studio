@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>זאזא דאנס - אפליקציית הריקוד שלך</title>
     <link rel="icon" type="image/png" href="favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -13,8 +14,8 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Heebo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0A0A0A;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -30,31 +31,42 @@
         }
 
         .logo {
-            width: 150px;
-            height: 150px;
+            width: 180px;
+            height: 180px;
             margin: 0 auto 2rem;
-            background: white;
-            border-radius: 25px;
+            background: #1A1A1A;
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
-            font-weight: bold;
-            color: #667eea;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 2px solid #333;
+            overflow: hidden;
+        }
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 18px;
         }
 
         h1 {
             font-size: 2.5rem;
             margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: 700;
+            background: linear-gradient(135deg, #E91E63, #00BCD4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .subtitle {
             font-size: 1.2rem;
             margin-bottom: 3rem;
-            opacity: 0.9;
+            color: rgba(255,255,255,0.8);
             line-height: 1.6;
+            font-weight: 400;
         }
 
         .download-buttons {
@@ -68,42 +80,46 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            padding: 15px 25px;
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(255,255,255,0.2);
-            border-radius: 15px;
+            padding: 18px 30px;
+            background: #1A1A1A;
+            border: 2px solid #333;
+            border-radius: 16px;
             color: white;
             text-decoration: none;
             font-size: 1.1rem;
             font-weight: 600;
             transition: all 0.3s ease;
-            min-width: 200px;
+            min-width: 220px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
 
         .download-btn:hover {
-            background: rgba(255,255,255,0.2);
-            border-color: rgba(255,255,255,0.4);
+            background: #2A2A2A;
+            border-color: #E91E63;
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 30px rgba(233, 30, 99, 0.2);
         }
 
         .platform-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
         }
 
         .ios-icon {
-            background: #000;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTMwIDEyLjVIMTBDOC4zNSAxMi41IDcgMTMuODUgNyAxNS41VjMxLjVDNyAzMy4xNSA4LjM1IDM0LjUgMTAgMzQuNUgzMEMzMS42NSAzNC41IDMzIDMzLjE1IDMzIDMxLjVWMTUuNUMzMyAxMy44NSAzMS42NSAxMi41IDMwIDEyLjVaTTIwIDIyLjVDMTguNjIgMjIuNSAxNy41IDIxLjM4IDE3LjUgMjBDMTcuNSAxOC42MiAxOC42MiAxNy41IDIwIDE3LjVDMjEuMzggMTcuNSAyMi41IDE4LjYyIDIyLjUgMjBDMjIuNSAyMS4zOCAyMS4zOCAyMi41IDIwIDIyLjVaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTcuNSA5LjY4NzVMMTcuNSA3LjVDMTcuNSA2LjUzMTI1IDE2LjcxODggNS43NSAxNS43NSA1Ljc1QzE0Ljc4MTIgNS43NSAxNCA2LjUzMTI1IDE0IDcuNVYxMi41QzE1LjA5MzggMTEuMTU2MiAxNi40Njg4IDEwLjIxODggMTcuNSA5LjY4NzVaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMjYgNy41VjEyLjVDMjQuOTA2MiAxMS4xNTYyIDIzLjUzMTIgMTAuMjE4OCAyMi41IDkuNjg3NUwyMi41IDcuNUMyMi41IDYuNTMxMjUgMjMuMjgxMiA1Ljc1IDI0LjI1IDUuNzVDMjUuMjE4OCA1Ljc1IDI2IDYuNTMxMjUgMjYgNy41WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+');
+            background-color: #000;
         }
 
         .android-icon {
-            background: #3DDC84;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEwIDEwSDE2VjE2SDEwVjEwWk0yNCAxMEgzMFYxNkgyNFYxMFpNMTAgMjRIMTZWMzBIMTBWMjRaTTI0IDI0SDMwVjMwSDI0VjI0WiIgZmlsbD0iIzM0QTg1MyIvPgo8cGF0aCBkPSJNMTggMTBIMjJWMTJIMjBWMTRIMThWMTBaIiBmaWxsPSIjMzRBODUzIi8+CjxwYXRoIGQ9Ik04IDEwVjMwSDMyVjEwSDhaIiBzdHJva2U9IiMzNEE4NTMiIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIvPgo8L3N2Zz4=');
+            background-color: #34A853;
         }
 
         .loading {
@@ -143,30 +159,29 @@
 </head>
 <body>
     <div class="container" id="content">
-        <div class="logo">
-            🕺💃
+        <div class="logo" id="logoContainer">
+            <img src="" alt="לוגו האפליקציה" id="logoImage" style="display: none;">
         </div>
         
-        <h1 id="appName">זאזא דאנס</h1>
+        <h1 id="appName">טוען...</h1>
         <p class="subtitle" id="appDescription">
-            האפליקציה המושלמת ללמידת ריקוד<br>
-            הורידו עכשיו ותתחילו לרקוד!
+            טוען...
         </p>
 
         <div class="download-buttons">
-            <a href="#" class="download-btn" id="iosLink">
-                <div class="platform-icon ios-icon">🍎</div>
+            <a href="#" class="download-btn" id="iosLink" style="display: none;">
+                <div class="platform-icon ios-icon"></div>
                 <div>
                     <div style="font-size: 0.9rem; opacity: 0.8;">הורידו עבור</div>
-                    <div>iPhone</div>
+                    <div>App Store</div>
                 </div>
             </a>
 
-            <a href="#" class="download-btn" id="androidLink">
-                <div class="platform-icon android-icon">🤖</div>
+            <a href="#" class="download-btn" id="androidLink" style="display: none;">
+                <div class="platform-icon android-icon"></div>
                 <div>
                     <div style="font-size: 0.9rem; opacity: 0.8;">הורידו עבור</div>
-                    <div>Android</div>
+                    <div>Google Play</div>
                 </div>
             </a>
         </div>
@@ -184,7 +199,7 @@
         // Load app configuration from database
         async function loadAppConfig() {
             try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/app_config?select=*`, {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/app_configuration?select=*&is_active=eq.true`, {
                     headers: {
                         'apikey': SUPABASE_ANON_KEY,
                         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
@@ -196,15 +211,34 @@
                     if (configs.length > 0) {
                         const config = configs[0];
                         
-                        // Update page content
+                        // Update page title and app name
                         if (config.app_name) {
                             document.getElementById('appName').textContent = config.app_name;
                             document.title = `${config.app_name} - אפליקציית הריקוד שלך`;
                         }
                         
+                        // Update app description
                         if (config.app_description) {
                             document.getElementById('appDescription').innerHTML = 
                                 config.app_description.replace(/\n/g, '<br>');
+                        }
+
+                        // Update logo
+                        const logoImage = document.getElementById('logoImage');
+                        const logoContainer = document.getElementById('logoContainer');
+                        
+                        if (config.app_logo_url && config.app_logo_url.trim() !== '') {
+                            logoImage.src = config.app_logo_url;
+                            logoImage.style.display = 'block';
+                            logoContainer.style.background = 'transparent';
+                            logoContainer.style.border = 'none';
+                        } else {
+                            // Fallback to gradient background with app name initial
+                            logoContainer.innerHTML = config.app_name ? config.app_name.charAt(0) : 'Z';
+                            logoContainer.style.background = 'linear-gradient(135deg, #E91E63, #00BCD4)';
+                            logoContainer.style.fontSize = '4rem';
+                            logoContainer.style.fontWeight = 'bold';
+                            logoContainer.style.color = 'white';
                         }
 
                         // Update download links
@@ -224,10 +258,20 @@
                         } else {
                             androidLink.style.display = 'none';
                         }
+
+                        // Update footer with app name
+                        const footer = document.querySelector('.footer');
+                        if (config.app_name) {
+                            footer.textContent = `© 2025 ${config.app_name} - סטודיו לריקוד`;
+                        }
                     }
                 }
             } catch (error) {
                 console.error('Error loading app config:', error);
+                // Set fallback content
+                document.getElementById('appName').textContent = 'ZaZa Dance';
+                document.getElementById('appDescription').innerHTML = 
+                    'האפליקציה המושלמת ללמידת ריקוד<br>הורידו עכשיו ותתחילו לרקוד!';
             } finally {
                 // Remove loading state
                 document.getElementById('content').classList.remove('loading');
