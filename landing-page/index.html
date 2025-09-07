@@ -5,6 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>זאזא דאנס - אפליקציית הריקוד שלך</title>
     <link rel="icon" type="image/png" href="favicon.png">
+    
+    <!-- Open Graph meta tags for social media sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://zazadance.com">
+    <meta property="og:title" content="זאזא דאנס - אפליקציית הריקוד שלך">
+    <meta property="og:description" content="האפליקציה המושלמת ללמידת ריקוד - הורידו עכשיו ותתחילו לרקוד!">
+    <meta property="og:image" content="">
+    <meta property="og:site_name" content="זאזא דאנס">
+    <meta property="og:locale" content="he_IL">
+    
+    <!-- Twitter Card meta tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://zazadance.com">
+    <meta name="twitter:title" content="זאזא דאנס - אפליקציית הריקוד שלך">
+    <meta name="twitter:description" content="האפליקציה המושלמת ללמידת ריקוד - הורידו עכשיו ותתחילו לרקוד!">
+    <meta name="twitter:image" content="">
+    
+    <!-- Additional meta tags -->
+    <meta name="description" content="האפליקציה המושלמת ללמידת ריקוד - הורידו עכשיו ותתחילו לרקוד!">
+    <meta name="keywords" content="ריקוד, דאנס, אפליקציה, זאזא">
+    <meta name="author" content="זאזא דאנס סטודיו">
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -228,6 +249,9 @@
                                 config.app_description.replace(/\n/g, '<br>');
                         }
 
+                        // Update Open Graph and Twitter meta tags for social sharing
+                        updateMetaTags(config);
+
                         // Update logo
                         const logoImage = document.getElementById('logoImage');
                         const logoContainer = document.getElementById('logoContainer');
@@ -288,6 +312,46 @@
             } finally {
                 // Remove loading state
                 document.getElementById('content').classList.remove('loading');
+            }
+        }
+
+        // Function to update meta tags for social media sharing
+        function updateMetaTags(config) {
+            const appName = config.app_name || 'זאזא דאנס';
+            const appDescription = config.app_description || 'האפליקציה המושלמת ללמידת ריקוד - הורידו עכשיו ותתחילו לרקוד!';
+            const appLogo = config.app_logo_url || '';
+
+            // Update Open Graph tags
+            updateMetaTag('og:title', `${appName} - אפליקציית הריקוד שלך`);
+            updateMetaTag('og:description', appDescription);
+            updateMetaTag('og:site_name', appName);
+            if (appLogo) {
+                updateMetaTag('og:image', appLogo);
+            }
+
+            // Update Twitter Card tags  
+            updateMetaTag('twitter:title', `${appName} - אפליקציית הריקוד שלך`);
+            updateMetaTag('twitter:description', appDescription);
+            if (appLogo) {
+                updateMetaTag('twitter:image', appLogo);
+            }
+
+            // Update regular meta tags
+            updateMetaTag('description', appDescription, 'name');
+            updateMetaTag('keywords', `ריקוד, דאנס, אפליקציה, ${appName}`, 'name');
+            updateMetaTag('author', `${appName} סטודיו`, 'name');
+        }
+
+        // Helper function to update or create meta tags
+        function updateMetaTag(property, content, attribute = 'property') {
+            let metaTag = document.querySelector(`meta[${attribute}="${property}"]`);
+            if (metaTag) {
+                metaTag.setAttribute('content', content);
+            } else {
+                metaTag = document.createElement('meta');
+                metaTag.setAttribute(attribute, property);
+                metaTag.setAttribute('content', content);
+                document.head.appendChild(metaTag);
             }
         }
 
