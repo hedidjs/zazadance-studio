@@ -1,6 +1,5 @@
 [build]
-  # Static deployment - pre-built files (NO BUILD COMMAND NEEDED)
-  command = ""
+  command = "./build_for_netlify.sh"
   publish = "build"
 
 [build.environment]
