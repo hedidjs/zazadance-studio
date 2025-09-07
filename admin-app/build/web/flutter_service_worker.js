@@ -3,11 +3,11 @@ const MANIFEST = 'flutter-app-manifest';
 const TEMP = 'flutter-temp-cache';
 const CACHE_NAME = 'flutter-app-cache';
 
-const RESOURCES = {"flutter_bootstrap.js": "b84a4e78dd71e3761ca98b93c226aaec",
+const RESOURCES = {"flutter_bootstrap.js": "69db7fccc4da6e059001b9bfa2f0f774",
 "version.json": "4f7b8f65e5154af284b4f2f73ae53d87",
 "index.html": "e0377301fd976bf1c84373b4de082c4e",
 "/": "e0377301fd976bf1c84373b4de082c4e",
-"main.dart.js": "7b0848f9550cffd8b8511df9f4b3c9f2",
+"main.dart.js": "de418e79a436f2ab0085ed1a5ee87612",
 "flutter.js": "888483df48293866f9f41d3d9274a779",
 "favicon.png": "eb93c8eaf4c246bd70d730523e709cbb",
 "icons/Icon-192.png": "b2bc64417417b0a00692458b5c5f4c96",
@@ -34,7 +34,7 @@ const RESOURCES = {"flutter_bootstrap.js": "b84a4e78dd71e3761ca98b93c226aaec",
 "assets/packages/html_editor_enhanced/assets/summernote-lite.min.js": "4fe75f9b35f43da141d60d6a697db1c1",
 "assets/shaders/ink_sparkle.frag": "ecc85a2e95f5e9f53123dcaf8cb9b6ce",
 "assets/AssetManifest.bin": "7931007c87fe0eede1be0a83d9897990",
-"assets/fonts/MaterialIcons-Regular.otf": "a77617d3271a102a98131be818599dfa",
+"assets/fonts/MaterialIcons-Regular.otf": "ac9d60014fabef9f4f9f073d74d592d9",
 "canvaskit/skwasm.js": "1ef3ea3a0fec4569e5d531da25f34095",
 "canvaskit/skwasm_heavy.js": "413f5b2b2d9345f37de148e2544f584f",
 "canvaskit/skwasm.js.symbols": "0088242d10d7e7d6d2649d1fe1bda7c1",
