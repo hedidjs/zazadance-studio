@@ -812,9 +812,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.1),
+              color: Colors.red.withOpacity(0.8), // Make it more visible temporarily
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.red.withOpacity(0.3)),
+              border: Border.all(color: Colors.red, width: 2), // Make border more visible
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
