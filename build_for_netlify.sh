@@ -39,6 +39,14 @@ if [ -f "landing-page/favicon.png" ]; then
     cp landing-page/favicon.png build/ || handle_error "Failed to copy favicon"
 fi
 
+echo "📝 Copying support page..."
+if [ -f "support.html" ]; then
+    cp support.html build/ || handle_error "Failed to copy support page"
+    echo "✅ Support page copied successfully"
+else
+    echo "⚠️  Support page not found, skipping..."
+fi
+
 echo "✅ Landing page copied successfully"
 
 echo "🔨 Building admin app..."
@@ -63,6 +71,8 @@ echo "📝 Adding redirects file..."
 cat > build/_redirects << 'EOF'
 # Netlify redirects for admin panel
 /admin/* /admin/index.html 200
+# Support page redirect
+/support /support.html 200
 /* /index.html 200
 EOF
 

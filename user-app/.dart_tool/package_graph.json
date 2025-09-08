@@ -5,7 +5,7 @@
   "packages": [
     {
       "name": "dance_studio_app",
-      "version": "1.0.0+25",
+      "version": "2.0.0+26",
       "dependencies": [
         "cached_network_image",
         "cupertino_icons",
@@ -195,6 +195,17 @@
         "flutter_web_plugins",
         "logging",
         "meta"
+      ]
+    },
+    {
+      "name": "google_sign_in",
+      "version": "6.3.0",
+      "dependencies": [
+        "flutter",
+        "google_sign_in_android",
+        "google_sign_in_ios",
+        "google_sign_in_platform_interface",
+        "google_sign_in_web"
       ]
     },
     {
@@ -726,6 +737,42 @@
       "dependencies": []
     },
     {
+      "name": "google_sign_in_web",
+      "version": "0.12.4+4",
+      "dependencies": [
+        "flutter",
+        "flutter_web_plugins",
+        "google_identity_services_web",
+        "google_sign_in_platform_interface",
+        "http",
+        "web"
+      ]
+    },
+    {
+      "name": "google_sign_in_platform_interface",
+      "version": "2.5.0",
+      "dependencies": [
+        "flutter",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "google_sign_in_ios",
+      "version": "5.9.0",
+      "dependencies": [
+        "flutter",
+        "google_sign_in_platform_interface"
+      ]
+    },
+    {
+      "name": "google_sign_in_android",
+      "version": "6.2.1",
+      "dependencies": [
+        "flutter",
+        "google_sign_in_platform_interface"
+      ]
+    },
+    {
       "name": "supabase",
       "version": "2.9.0",
       "dependencies": [
@@ -1061,6 +1108,14 @@
       ]
     },
     {
+      "name": "google_identity_services_web",
+      "version": "0.3.3+1",
+      "dependencies": [
+        "meta",
+        "web"
+      ]
+    },
+    {
       "name": "yet_another_json_isolate",
       "version": "2.1.0",
       "dependencies": [
@@ -1281,61 +1336,6 @@
       "name": "web_socket",
       "version": "1.0.1",
       "dependencies": [
-        "web"
-      ]
-    },
-    {
-      "name": "google_sign_in",
-      "version": "6.3.0",
-      "dependencies": [
-        "flutter",
-        "google_sign_in_android",
-        "google_sign_in_ios",
-        "google_sign_in_platform_interface",
-        "google_sign_in_web"
-      ]
-    },
-    {
-      "name": "google_sign_in_web",
-      "version": "0.12.4+4",
-      "dependencies": [
-        "flutter",
-        "flutter_web_plugins",
-        "google_identity_services_web",
-        "google_sign_in_platform_interface",
-        "http",
-        "web"
-      ]
-    },
-    {
-      "name": "google_sign_in_platform_interface",
-      "version": "2.5.0",
-      "dependencies": [
-        "flutter",
-        "plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "google_sign_in_ios",
-      "version": "5.9.0",
-      "dependencies": [
-        "flutter",
-        "google_sign_in_platform_interface"
-      ]
-    },
-    {
-      "name": "google_sign_in_android",
-      "version": "6.2.1",
-      "dependencies": [
-        "flutter",
-        "google_sign_in_platform_interface"
-      ]
-    },
-    {
-      "name": "google_identity_services_web",
-      "version": "0.3.3+1",
-      "dependencies": [
-        "meta",
         "web"
       ]
     }

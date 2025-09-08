@@ -2,7 +2,7 @@ name: dance_studio_app
 description: ZaZa Dance
 publish_to: 'none'
 
-version: 1.0.0+25
+version: 2.0.0+26
 
 environment:
   sdk: ^3.9.0

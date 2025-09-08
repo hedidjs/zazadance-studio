@@ -15,6 +15,12 @@
   status = 200
 
 [[redirects]]
+  # Support page - serve the support.html file directly
+  from = "/support"
+  to = "/support.html"
+  status = 200
+
+[[redirects]]
   # Main app SPA routing
   from = "/*"
   to = "/index.html"
