@@ -736,8 +736,8 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
       
       // Then delete from auth.users using admin API
       try {
-        final authResponse = await _supabase.auth.admin.deleteUser(userId);
-        print('Auth delete response: $authResponse');
+        await _supabase.auth.admin.deleteUser(userId);
+        print('Auth delete successful');
       } catch (authError) {
         print('Auth delete error (might be okay if user was created via Google): $authError');
         // For Google users, they might not exist in auth.users table, so we continue
