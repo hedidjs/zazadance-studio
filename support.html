@@ -51,16 +51,10 @@
             gap: 15px;
         }
         
-        .logo-icon {
+        .app-logo {
             width: 50px;
             height: 50px;
-            background: linear-gradient(45deg, #e91e63, #f06292);
             border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
         }
         
         h1 {
@@ -296,15 +290,11 @@
         <header>
             <div class="header-content">
                 <div class="logo">
-                    <div class="logo-icon">💃</div>
+                    <img src="/favicon.png" alt="ZaZa Dance" class="app-logo">
                     <div>
-                        <h1>ZaZa Dance Studio</h1>
-                        <p class="subtitle">תמיכה ועזרה</p>
+                        <h1>תמיכה ועזרה</h1>
+                        <p class="subtitle">ZaZa Dance Studio</p>
                     </div>
-                </div>
-                <div class="nav-links">
-                    <a href="/">עמוד הבית</a>
-                    <a href="/admin">כניסה למנהלים</a>
                 </div>
             </div>
         </header>
@@ -357,10 +347,8 @@
                         <label for="category">סוג הפניה</label>
                         <select id="category" name="category">
                             <option value="technical">בעיה טכנית</option>
-                            <option value="account">בעיה בחשבון</option>
-                            <option value="content">תוכן ומדריכים</option>
-                            <option value="billing">תשלומים</option>
-                            <option value="feature">בקשת תכונה</option>
+                            <option value="account">בעיית התחברות והרשמה</option>
+                            <option value="general">שאלות כלליות</option>
                             <option value="other">אחר</option>
                         </select>
                     </div>
@@ -394,28 +382,6 @@
             </div>
         </div>
 
-        <div class="app-download">
-            <h2>הורד את האפליקציה</h2>
-            <p>קבל גישה מלאה לכל המדריכים והתכונות</p>
-            
-            <div class="download-buttons">
-                <a href="#" class="download-btn">
-                    <span style="font-size: 24px;">📱</span>
-                    <div>
-                        <div>הורד מ-</div>
-                        <strong>App Store</strong>
-                    </div>
-                </a>
-                
-                <a href="#" class="download-btn">
-                    <span style="font-size: 24px;">🤖</span>
-                    <div>
-                        <div>הורד מ-</div>
-                        <strong>Google Play</strong>
-                    </div>
-                </a>
-            </div>
-        </div>
 
         <footer>
             <p>&copy; 2024 ZaZa Dance Studio. כל הזכויות שמורות.</p>
