@@ -11,52 +11,79 @@ class GoogleAuthService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   void initialize() {
-    _googleSignIn = GoogleSignIn(
-      // Client IDs לפלטפורמות שונות
-      clientId: kIsWeb
-          ? '409450161677-39sdbh03i11gvgljhdvbcf930cfovqeq.apps.googleusercontent.com' // Web
-          : null, // For mobile platforms, use the configuration files
-      serverClientId: '409450161677-39sdbh03i11gvgljhdvbcf930cfovqeq.apps.googleusercontent.com', // Web client ID for server
-    );
+    try {
+      debugPrint('Initializing GoogleSignIn...');
+      _googleSignIn = GoogleSignIn(
+        // Let platform-specific configurations handle the client IDs
+        // iOS will use CLIENT_ID from GoogleService-Info.plist
+        // Android will use client_id from google-services.json
+        // Web client ID is specified via serverClientId for Supabase token validation
+        serverClientId: '409450161677-39sdbh03i11gvgljhdvbcf930cfovqeq.apps.googleusercontent.com', // Web client ID for Supabase auth
+        scopes: ['email', 'openid', 'profile'], // Add explicit scopes
+      );
+      debugPrint('GoogleSignIn initialized successfully');
+    } catch (e, stackTrace) {
+      debugPrint('Error initializing GoogleSignIn: $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 
   /// התחברות דרך Google והתחברות לSupabase
   Future<AuthResponse?> signInWithGoogle() async {
     try {
-      // קודם התנתקות כדי לאפשר בחירת חשבון שונה
-      await _googleSignIn.signOut();
+      debugPrint('Starting Google Sign-In process...');
       
-      // התחברות דרך Google עם אפשרות בחירת חשבון
+      // התנתקות מהחשבון הקודם כדי לאפשר בחירת חשבון חדש
+      await _googleSignIn.signOut();
+      debugPrint('Signed out from previous Google account');
+      
+      // התחברות דרך Google עם אפשרות לבחירת חשבון
+      debugPrint('Attempting to sign in with Google...');
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        // המשתמש ביטל את ההתחברות
+        debugPrint('User cancelled Google Sign-In');
         return null;
       }
 
+      debugPrint('Google user signed in: ${googleUser.email}');
+
       // קבלת tokens מGoogle
+      debugPrint('Getting authentication tokens...');
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final String? idToken = googleAuth.idToken;
       final String? accessToken = googleAuth.accessToken;
 
       if (idToken == null) {
+        debugPrint('ID token is null');
         throw Exception('לא ניתן לקבל ID token מGoogle');
       }
 
+      debugPrint('Got ID token, signing in to Supabase...');
+      
       // התחברות לSupabase עם Google credentials
+      // Need to verify that the ID token has the correct audience (Web client ID)
+      debugPrint('ID token audience check - should contain Web client ID for Supabase');
+      
       final AuthResponse response = await _supabase.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
         accessToken: accessToken,
       );
 
+      debugPrint('Supabase sign-in successful');
+
       // יצירת/עדכון פרופיל המשתמש בטבלת users
       if (response.user != null) {
+        debugPrint('Creating/updating user profile...');
         await _createOrUpdateUserProfile(response.user!, googleUser);
       }
 
+      debugPrint('Google Sign-In process completed successfully');
       return response;
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('שגיאה בהתחברות Google: $e');
+      debugPrint('Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -86,6 +113,47 @@ class GoogleAuthService {
       await _googleSignIn.signInSilently();
     } catch (e) {
       debugPrint('Silent sign-in failed: $e');
+    }
+  }
+
+  /// מחיקת חשבון משתמש מהמערכת
+  Future<void> deleteUserAccount() async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) {
+        throw Exception('אין משתמש מחובר');
+      }
+
+      debugPrint('Starting account deletion process for user: ${user.id}');
+
+      // 1. מחיקת כל הנתונים הקשורים למשתמש מהטבלאות
+      await _supabase.from('users').delete().eq('id', user.id);
+      await _supabase.from('profiles').delete().eq('user_id', user.id);
+      
+      // 2. מחיקת קבצים מ-Storage (תמונות פרופיל וכו')
+      try {
+        final files = await _supabase.storage.from('avatars').list();
+        final userFiles = files.where((file) => file.name.startsWith('${user.id}_')).toList();
+        if (userFiles.isNotEmpty) {
+          final filesToDelete = userFiles.map((file) => file.name).toList();
+          await _supabase.storage.from('avatars').remove(filesToDelete);
+        }
+      } catch (e) {
+        debugPrint('Error deleting user files: $e');
+        // ממשיכים עם המחיקה גם אם הקבצים נכשלו
+      }
+
+      // 3. התנתקות מ-Google
+      await _googleSignIn.signOut();
+      
+      // 4. מחיקת המשתמש מ-Supabase Auth (חייב להיות אחרון!)
+      await _supabase.rpc('delete_user_account', params: {'user_id': user.id});
+
+      debugPrint('Account deletion completed successfully');
+    } catch (e, stackTrace) {
+      debugPrint('Error deleting user account: $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
     }
   }
 

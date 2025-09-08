@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import '../../services/google_auth_service.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -175,6 +176,103 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('שגיאה בשמירת הפרופיל: $e')),
         );
+      }
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text(
+          'מחיקת חשבון',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'האם אתה בטוח שברצונך למחוק את החשבון?\n\nפעולה זו תמחק לצמיתות:\n• את כל הנתונים שלך\n• תמונות הפרופיל\n• ההיסטוריה שלך באפליקציה\n\nלא ניתן לבטל פעולה זו!',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text(
+              'ביטול',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text(
+              'מחק חשבון',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final doubleConfirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: const Color(0xFF1E1E1E),
+          title: const Text(
+            'אישור אחרון',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: const Text(
+            'זהו האישור האחרון!\n\nלחיצה על "אישור מחיקה" תמחק את החשבון שלך לצמיתות ללא אפשרות שחזור.',
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text(
+                'ביטול',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text(
+                'אישור מחיקה',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (doubleConfirmed == true) {
+        try {
+          setState(() {
+            _isLoading = true;
+          });
+
+          await GoogleAuthService().deleteUserAccount();
+          
+          if (mounted) {
+            // ניווט לדף ההתחברות ומחיקת כל ההיסטוריה
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              '/login',
+              (route) => false,
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('שגיאה במחיקת החשבון: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
       }
     }
   }
@@ -706,6 +804,59 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 const SnackBar(content: Text('פתח פניה לתמיכה')),
               );
             },
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // מחיקת חשבון - אזור מסוכן
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'אזור מסוכן',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'פעולות בלתי הפיכות שעלולות למחוק את כל הנתונים שלך',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white60,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _deleteAccount,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.delete_forever),
+                    label: const Text(
+                      'מחק חשבון לצמיתות',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

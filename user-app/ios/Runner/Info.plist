@@ -47,11 +47,25 @@
 	<true/>
 	
 	<!-- Google Sign-In Configuration -->
+	<key>GIDClientID</key>
+	<string>409450161677-83pgsdvneoc9uh03dq4n602l1j7pdtc3.apps.googleusercontent.com</string>
+	
+	<!-- App Tracking Transparency Usage Description -->
+	<key>NSUserTrackingUsageDescription</key>
+	<string>האפליקציה משתמשת במידע למטרות אימות והתחברות עם גוגל בלבד.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
 			<string></string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.409450161677-83pgsdvneoc9uh03dq4n602l1j7pdtc3</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.sharonstudio.app.danceStudioApp</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>com.sharonstudio.app.danceStudioApp</string>
