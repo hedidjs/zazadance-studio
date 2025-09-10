@@ -14,7 +14,7 @@ class _ContactMessagesScreenState extends State<ContactMessagesScreen> {
   
   List<Map<String, dynamic>> _messages = [];
   bool _isLoading = true;
-  String _selectedFilter = 'all'; // all, new, read, responded
+  String _selectedFilter = 'all'; // all, new, read, in_progress, responded
 
   @override
   void initState() {
@@ -28,6 +28,11 @@ class _ContactMessagesScreenState extends State<ContactMessagesScreen> {
     });
 
     try {
+      // Debug: Check if user is authenticated
+      final user = _supabase.auth.currentUser;
+      print('Current user: ${user?.id}');
+      print('User role: ${user?.role}');
+      
       var query = _supabase.from('contact_messages').select('*');
       
       if (_selectedFilter != 'all') {
@@ -35,6 +40,7 @@ class _ContactMessagesScreenState extends State<ContactMessagesScreen> {
       }
       
       final response = await query.order('created_at', ascending: false);
+      print('Response received: ${response.length} messages');
 
       if (mounted) {
         setState(() {
@@ -43,6 +49,7 @@ class _ContactMessagesScreenState extends State<ContactMessagesScreen> {
         });
       }
     } catch (e) {
+      print('Error loading messages: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -66,6 +73,54 @@ class _ContactMessagesScreenState extends State<ContactMessagesScreen> {
       if (mounted) {
         _showErrorSnackBar('שגיאה בעדכון סטטוס ההודעה: $e');
       }
+    }
+  }
+
+  Future<void> _deleteMessage(String messageId) async {
+    try {
+      await _supabase.from('contact_messages').delete().eq('id', messageId);
+
+      if (mounted) {
+        _showSuccessSnackBar('ההודעה נמחקה בהצלחה');
+        _loadMessages(); // Reload to show updated list
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorSnackBar('שגיאה במחיקת ההודעה: $e');
+      }
+    }
+  }
+
+  void _confirmDeleteMessage(Map<String, dynamic> message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('מחיקת הודעה'),
+        content: Text('האם אתה בטוח שברצונך למחוק את ההודעה מאת ${message['name']}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('ביטול'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _deleteMessage(message['id']);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('מחק'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return DateFormat('dd/MM/yyyy HH:mm').format(date);
+    } catch (e) {
+      return dateString;
     }
   }
 
@@ -112,14 +167,50 @@ class _ContactMessagesScreenState extends State<ContactMessagesScreen> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('סגור'),
           ),
-          if (message['status'] != 'responded')
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _updateMessageStatus(message['id'], 'responded');
-              },
-              child: const Text('סמן כמטופל'),
+          PopupMenuButton<String>(
+            onSelected: (String value) {
+              Navigator.of(context).pop();
+              if (value == 'delete') {
+                _confirmDeleteMessage(message);
+              } else {
+                _updateMessageStatus(message['id'], value);
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              const PopupMenuItem<String>(
+                value: 'new',
+                child: Text('סמן כחדש'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'read',
+                child: Text('סמן כנקרא'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'in_progress',
+                child: Text('סמן בתהליך'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'responded',
+                child: Text('סמן כמטופל'),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem<String>(
+                value: 'delete',
+                child: Text('מחק הודעה', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'פעולות',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
+          ),
         ],
       ),
     );
@@ -150,6 +241,8 @@ class _ContactMessagesScreenState extends State<ContactMessagesScreen> {
         return Colors.red;
       case 'read':
         return Colors.orange;
+      case 'in_progress':
+        return Colors.blue;
       case 'responded':
         return Colors.green;
       default:
@@ -163,6 +256,8 @@ class _ContactMessagesScreenState extends State<ContactMessagesScreen> {
         return 'חדש';
       case 'read':
         return 'נקרא';
+      case 'in_progress':
+        return 'בתהליך';
       case 'responded':
         return 'טופל';
       default:
@@ -216,6 +311,10 @@ class _ContactMessagesScreenState extends State<ContactMessagesScreen> {
               const PopupMenuItem(
                 value: 'read',
                 child: Text('הודעות שנקראו'),
+              ),
+              const PopupMenuItem(
+                value: 'in_progress',
+                child: Text('הודעות בתהליך'),
               ),
               const PopupMenuItem(
                 value: 'responded',
