@@ -47,6 +47,22 @@ else
     echo "⚠️  Support page not found, skipping..."
 fi
 
+echo "📝 Copying legal pages from user-app directory..."
+# Copy legal pages from user-app
+if [ -f "user-app/privacy.html" ] && [ -f "user-app/terms.html" ] && [ -f "user-app/disclaimer.html" ] && [ -f "user-app/legal-styles.css" ]; then
+    cp user-app/privacy.html build/ || handle_error "Failed to copy privacy page"
+    cp user-app/terms.html build/ || handle_error "Failed to copy terms page"  
+    cp user-app/disclaimer.html build/ || handle_error "Failed to copy disclaimer page"
+    cp user-app/legal-styles.css build/ || handle_error "Failed to copy legal styles"
+    echo "✅ Legal pages (privacy, terms, disclaimer) and styles copied successfully"
+else
+    echo "⚠️  Some legal pages not found, checking availability..."
+    [ -f "user-app/privacy.html" ] && cp user-app/privacy.html build/ && echo "✅ Privacy page copied"
+    [ -f "user-app/terms.html" ] && cp user-app/terms.html build/ && echo "✅ Terms page copied"
+    [ -f "user-app/disclaimer.html" ] && cp user-app/disclaimer.html build/ && echo "✅ Disclaimer page copied"
+    [ -f "user-app/legal-styles.css" ] && cp user-app/legal-styles.css build/ && echo "✅ Legal styles copied"
+fi
+
 echo "✅ Landing page copied successfully"
 
 echo "🔨 Building admin app..."
@@ -73,6 +89,11 @@ cat > build/_redirects << 'EOF'
 /admin/* /admin/index.html 200
 # Support page redirect
 /support /support.html 200
+# Legal pages redirects
+/privacy /privacy.html 200
+/terms /terms.html 200  
+/disclaimer /disclaimer.html 200
+# Fallback to landing page
 /* /index.html 200
 EOF
 
