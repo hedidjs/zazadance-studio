@@ -12,14 +12,31 @@ class ContactScreen extends StatefulWidget {
 
 class _ContactScreenState extends State<ContactScreen> {
   final _supabase = Supabase.instance.client;
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _subjectController = TextEditingController();
+  final _messageController = TextEditingController();
   
   Map<String, dynamic>? _contactInfo;
   bool _isLoading = true;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
     _loadContactInfo();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _subjectController.dispose();
+    _messageController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadContactInfo() async {
@@ -51,6 +68,55 @@ class _ContactScreenState extends State<ContactScreen> {
     }
   }
 
+  Future<void> _submitContactForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      await _supabase.from('contact_messages').insert({
+        'name': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'phone': _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+        'subject': _subjectController.text.trim().isEmpty ? null : _subjectController.text.trim(),
+        'message': _messageController.text.trim(),
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ההודעה נשלחה בהצלחה! נחזור אליכם בהקדם'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Clear the form
+        _nameController.clear();
+        _emailController.clear();
+        _phoneController.clear();
+        _subjectController.clear();
+        _messageController.clear();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('שגיאה בשליחת ההודעה: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,249 +141,260 @@ class _ContactScreenState extends State<ContactScreen> {
             )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // כותרת
-                  const Text(
-                    'צרו איתנו קשר',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  const Text(
-                    'נשמח לעמוד לשירותכם בכל עת',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  
-                  const SizedBox(height: 32),
-                  
-                  if (_contactInfo != null) ...[
-                    // פרטי קשר
-                    _buildContactCard(
-                      icon: Icons.phone,
-                      title: 'טלפון',
-                      content: _contactInfo!['phone'] ?? '',
-                      onTap: () => _makePhoneCall(_contactInfo!['whatsapp_number']?.replaceAll('-', '') ?? ''),
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    _buildContactCard(
-                      icon: Icons.email,
-                      title: 'אימייל',
-                      content: _contactInfo!['email'] ?? '',
-                      onTap: () => _sendEmail(_contactInfo!['email'] ?? ''),
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    _buildContactCard(
-                      icon: Icons.location_on,
-                      title: 'כתובת',
-                      content: _contactInfo!['address'] ?? '',
-                      subtitle: 'לחצו לפתיחה במפות',
-                      onTap: () => _openMap(_contactInfo!['address'] ?? ''),
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    _buildContactCard(
-                      icon: Icons.access_time,
-                      title: 'שעות פעילות',
-                      content: _contactInfo!['working_hours'] ?? '',
-                    ),
-                    
-                    const SizedBox(height: 32),
-                    
-                    // תקשורת נוספת
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // כותרת
                     const Text(
-                      'תקשורת נוספת',
+                      'שלחו לנו הודעה',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                       textAlign: TextAlign.center,
                     ),
                     
+                    const SizedBox(height: 8),
+                    
+                    const Text(
+                      'מלאו את הפרטים ונחזור אליכם בהקדם',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white70,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    // Name field
+                    TextFormField(
+                      controller: _nameController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'שם מלא *',
+                        labelStyle: const TextStyle(color: Colors.white70),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF00BCD4)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFE91E63), width: 2),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFF1E1E1E),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'אנא הכניסו שם מלא';
+                        }
+                        return null;
+                      },
+                    ),
+                    
                     const SizedBox(height: 16),
                     
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildSocialButton(
-                          icon: Icons.chat,
-                          label: 'WhatsApp',
-                          color: const Color(0xFF25D366),
-                          onTap: () => _openWhatsApp(_contactInfo!['whatsapp_number']?.replaceAll('-', '') ?? ''),
+                    // Email field
+                    TextFormField(
+                      controller: _emailController,
+                      style: const TextStyle(color: Colors.white),
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: 'אימייל *',
+                        labelStyle: const TextStyle(color: Colors.white70),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        
-                        _buildSocialButton(
-                          icon: Icons.camera_alt,
-                          label: 'Instagram',
-                          color: const Color(0xFFE4405F),
-                          onTap: () => _openInstagram(_contactInfo!['instagram_username'] ?? ''),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF00BCD4)),
                         ),
-                      ],
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFE91E63), width: 2),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFF1E1E1E),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'אנא הכניסו כתובת אימייל';
+                        }
+                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                          return 'אנא הכניסו כתובת אימייל תקינה';
+                        }
+                        return null;
+                      },
                     ),
-                  ] else ...[
-                    // הצגת מידע ברירת מחדל במקרה שאין מידע
-                    const Center(
-                      child: Text(
-                        'טוען פרטי יצירת קשר...',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Phone field (optional)
+                    TextFormField(
+                      controller: _phoneController,
+                      style: const TextStyle(color: Colors.white),
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: 'טלפון (אופציונלי)',
+                        labelStyle: const TextStyle(color: Colors.white70),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF00BCD4)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFE91E63), width: 2),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFF1E1E1E),
                       ),
                     ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Subject field (optional)
+                    TextFormField(
+                      controller: _subjectController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'נושא (אופציונלי)',
+                        labelStyle: const TextStyle(color: Colors.white70),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF00BCD4)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFE91E63), width: 2),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFF1E1E1E),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Message field
+                    TextFormField(
+                      controller: _messageController,
+                      style: const TextStyle(color: Colors.white),
+                      maxLines: 5,
+                      decoration: InputDecoration(
+                        labelText: 'הודעה *',
+                        labelStyle: const TextStyle(color: Colors.white70),
+                        alignLabelWithHint: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF00BCD4)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFE91E63), width: 2),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFF1E1E1E),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'אנא כתבו הודעה';
+                        }
+                        if (value.trim().length < 10) {
+                          return 'ההודעה צריכה להכיל לפחות 10 תווים';
+                        }
+                        return null;
+                      },
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    // Submit button
+                    ElevatedButton(
+                      onPressed: _isSubmitting ? null : _submitContactForm,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE91E63),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 4,
+                      ),
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'שלח הודעה',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    // Contact info section
+                    if (_contactInfo != null) ...[
+                      const Divider(color: Colors.white24),
+                      const SizedBox(height: 24),
+                      
+                      const Text(
+                        'דרכי יצירת קשר נוספות',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildSocialButton(
+                            icon: Icons.chat,
+                            label: 'WhatsApp',
+                            color: const Color(0xFF25D366),
+                            onTap: () => _openWhatsApp(_contactInfo!['whatsapp_number']?.replaceAll('-', '') ?? ''),
+                          ),
+                          
+                          _buildSocialButton(
+                            icon: Icons.phone,
+                            label: 'התקשרו',
+                            color: const Color(0xFF00BCD4),
+                            onTap: () => _makePhoneCall(_contactInfo!['phone'] ?? ''),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
-            
-            const SizedBox(height: 32),
-            
-            // הודעה נוספת
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1E1E),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFF00BCD4),
-                  width: 1,
                 ),
               ),
-              child: const Column(
-                children: [
-                  Icon(
-                    Icons.star,
-                    color: Color(0xFFE91E63),
-                    size: 32,
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    'נשמח לעזור לכם!',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'צרו איתנו קשר בכל דרך שנוחה לכם, ואנחנו נחזור אליכם בהקדם',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white70,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContactCard({
-    required IconData icon,
-    required String title,
-    required String content,
-    String? subtitle,
-    VoidCallback? onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF00BCD4),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
-            
-            const SizedBox(width: 16),
-            
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF00BCD4),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 4),
-                  
-                  Text(
-                    content,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.white60,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            
-            if (onTap != null)
-              const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.white54,
-                size: 16,
-              ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -372,30 +449,6 @@ class _ContactScreenState extends State<ContactScreen> {
     await launchUrl(launchUri);
   }
 
-  Future<void> _sendEmail(String email) async {
-    final Uri launchUri = Uri(
-      scheme: 'mailto',
-      path: email,
-      queryParameters: {
-        'subject': 'פנייה מאפליקציית סטודיו שרון',
-      },
-    );
-    await launchUrl(launchUri);
-  }
-
-  Future<void> _openMap(String address) async {
-    final Uri launchUri = Uri(
-      scheme: 'https',
-      host: 'www.google.com',
-      path: '/maps/search/',
-      queryParameters: {
-        'api': '1',
-        'query': address,
-      },
-    );
-    await launchUrl(launchUri, mode: LaunchMode.externalApplication);
-  }
-
   Future<void> _openWhatsApp(String phoneNumber) async {
     final Uri launchUri = Uri(
       scheme: 'https',
@@ -404,16 +457,6 @@ class _ContactScreenState extends State<ContactScreen> {
       queryParameters: {
         'text': 'שלום, אני פונה מאפליקציית סטודיו שרון',
       },
-    );
-    await launchUrl(launchUri, mode: LaunchMode.externalApplication);
-  }
-
-  Future<void> _openInstagram([String? username]) async {
-    final String instagramUsername = username ?? 'studio_sharon';
-    final Uri launchUri = Uri(
-      scheme: 'https',
-      host: 'www.instagram.com',
-      path: '/$instagramUsername',
     );
     await launchUrl(launchUri, mode: LaunchMode.externalApplication);
   }

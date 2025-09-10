@@ -270,6 +270,16 @@ class AdminLayout extends ConsumerWidget {
                   path: '/contact',
                   isActive: currentLocation == '/contact',
                 ),
+                
+                // הודעות יצירת קשר
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.message_outlined,
+                  activeIcon: Icons.message,
+                  title: 'הודעות יצירת קשר',
+                  path: '/contact-messages',
+                  isActive: currentLocation == '/contact-messages',
+                ),
               ],
             ),
           ),
@@ -552,6 +562,14 @@ class AdminLayout extends ConsumerWidget {
                   path: '/contact',
                   isActive: currentLocation == '/contact',
                 ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.message_outlined,
+                  activeIcon: Icons.message,
+                  title: 'הודעות יצירת קשר',
+                  path: '/contact-messages',
+                  isActive: currentLocation == '/contact-messages',
+                ),
               ],
             ),
           ),
@@ -743,6 +761,8 @@ class AdminLayout extends ConsumerWidget {
         return 'ניהול תקנון ופרטיות';
       case '/contact':
         return 'ניהול יצירת קשר';
+      case '/contact-messages':
+        return 'הודעות יצירת קשר';
       default:
         return 'פאנל ניהול';
     }
@@ -774,6 +794,8 @@ class AdminLayout extends ConsumerWidget {
         return 'עריכת תנאי שימוש ופרטיות';
       case '/contact':
         return 'עריכת פרטי יצירת קשר';
+      case '/contact-messages':
+        return 'צפייה וניהול הודעות מלקוחות';
       default:
         return 'ZaZa Dance';
     }

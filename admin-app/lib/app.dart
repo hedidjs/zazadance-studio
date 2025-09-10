@@ -9,6 +9,7 @@ import 'screens/users/users_management_screen.dart';
 import 'screens/about/about_management_screen.dart';
 import 'screens/terms/terms_management_screen.dart';
 import 'screens/contact/contact_management_screen.dart';
+import 'screens/contact/contact_messages_screen.dart';
 import 'screens/general/general_management_screen.dart';
 import 'screens/theme/theme_management_screen.dart';
 import 'screens/groups/groups_management_screen.dart';
@@ -100,6 +101,12 @@ class AdminRouter {
           GoRoute(
             path: '/contact',
             builder: (context, state) => const ContactManagementScreen(),
+          ),
+          
+          // הודעות יצירת קשר
+          GoRoute(
+            path: '/contact-messages',
+            builder: (context, state) => const ContactMessagesScreen(),
           ),
           
           // ניהול כללי
