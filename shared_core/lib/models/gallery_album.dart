@@ -6,6 +6,7 @@ class GalleryAlbum extends BaseModel {
   final String? description;
   final String color;
   final int imageCount;
+  final int videoCount;
   final bool isActive;
 
   const GalleryAlbum({
@@ -16,6 +17,7 @@ class GalleryAlbum extends BaseModel {
     this.description,
     required this.color,
     required this.imageCount,
+    this.videoCount = 0,
     this.isActive = true,
   }) : super(
           id: id,
@@ -32,6 +34,7 @@ class GalleryAlbum extends BaseModel {
       description: json['description'],
       color: json['color'] ?? '#E91E63',
       imageCount: json['image_count'] ?? 0,
+      videoCount: json['video_count'] ?? 0,
       isActive: json['is_active'] ?? true,
     );
   }
@@ -46,6 +49,7 @@ class GalleryAlbum extends BaseModel {
       'description': description,
       'color': color,
       'image_count': imageCount,
+      'video_count': videoCount,
       'is_active': isActive,
     };
   }
@@ -59,6 +63,7 @@ class GalleryAlbum extends BaseModel {
     String? description,
     String? color,
     int? imageCount,
+    int? videoCount,
     bool? isActive,
   }) {
     return GalleryAlbum(
@@ -69,6 +74,7 @@ class GalleryAlbum extends BaseModel {
       description: description ?? this.description,
       color: color ?? this.color,
       imageCount: imageCount ?? this.imageCount,
+      videoCount: videoCount ?? this.videoCount,
       isActive: isActive ?? this.isActive,
     );
   }
@@ -81,4 +87,24 @@ class GalleryAlbum extends BaseModel {
 
   /// Get display description with fallback
   String get displayDescription => description ?? 'אלבום תמונות';
+
+  /// Get total count of items (images + videos)
+  int get totalCount => imageCount + videoCount;
+
+  /// Get formatted count display
+  String get formattedItemCount {
+    if (imageCount == 0 && videoCount == 0) {
+      return 'ריק';
+    }
+    
+    final parts = <String>[];
+    if (imageCount > 0) {
+      parts.add('$imageCount תמונות');
+    }
+    if (videoCount > 0) {
+      parts.add('$videoCount סרטונים');
+    }
+    
+    return parts.join(', ');
+  }
 }

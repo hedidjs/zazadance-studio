@@ -306,6 +306,15 @@ class SupabaseGalleryRepository implements GalleryRepository {
             .from(_tableName)
             .select('id')
             .eq('album_id', albumData['id'])
+            .eq('media_type', 'image')
+            .eq('is_active', true);
+
+        // Count videos for this album
+        final videoCountResponse = await Supabase.instance.client
+            .from(_tableName)
+            .select('id')
+            .eq('album_id', albumData['id'])
+            .eq('media_type', 'video')
             .eq('is_active', true);
 
         final album = GalleryAlbum(
@@ -316,6 +325,7 @@ class SupabaseGalleryRepository implements GalleryRepository {
           description: albumData['description_he'],
           color: '#E91E63', // Default color since gallery_albums table doesn't have color column
           imageCount: imageCountResponse.length,
+          videoCount: videoCountResponse.length,
           isActive: albumData['is_active'] ?? true,
         );
         albums.add(album);

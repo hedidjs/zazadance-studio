@@ -200,13 +200,13 @@ class _GalleryAlbumsScreenState extends ConsumerState<GalleryAlbumsScreen> {
                       Row(
                         children: [
                           Icon(
-                            Icons.photo,
+                            album.videoCount > 0 ? Icons.collections : Icons.photo,
                             size: 16,
                             color: Colors.grey[500],
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${album.imageCount} תמונות',
+                            album.formattedItemCount,
                             style: TextStyle(
                               color: Colors.grey[500],
                               fontSize: 12,

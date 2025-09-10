@@ -3,18 +3,23 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:shared_core/models/gallery_image.dart';
+import 'photo_view_screen.dart';
 import '../favorites/favorites_service.dart';
 
 class VideoViewScreen extends ConsumerStatefulWidget {
   final String videoUrl;
   final String title;
   final GalleryImage image;
+  final List<GalleryImage>? images;
+  final int? initialIndex;
 
   const VideoViewScreen({
     super.key,
     required this.videoUrl,
     required this.title,
     required this.image,
+    this.images,
+    this.initialIndex,
   });
 
   @override
@@ -24,10 +29,12 @@ class VideoViewScreen extends ConsumerStatefulWidget {
 class _VideoViewScreenState extends ConsumerState<VideoViewScreen> {
   late YoutubePlayerController _controller;
   bool _isPlayerReady = false;
+  late int _currentIndex;
 
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialIndex ?? 0;
     _initializePlayer();
   }
 
@@ -54,6 +61,76 @@ class _VideoViewScreenState extends ConsumerState<VideoViewScreen> {
   void _listener() {
     if (_isPlayerReady) {
       setState(() {});
+    }
+  }
+
+  void _navigateToNext() {
+    if (widget.images == null || _currentIndex >= widget.images!.length - 1) return;
+    
+    final nextIndex = _currentIndex + 1;
+    final nextItem = widget.images![nextIndex];
+    
+    if (nextItem.isVideo) {
+      // Navigate to next video
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => VideoViewScreen(
+            videoUrl: nextItem.mediaUrl,
+            title: nextItem.titleHe,
+            image: nextItem,
+            images: widget.images,
+            initialIndex: nextIndex,
+          ),
+        ),
+      );
+    } else {
+      // Navigate to photo view
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => PhotoViewScreen(
+            imageUrl: nextItem.mediaUrl,
+            title: nextItem.titleHe,
+            image: nextItem,
+            images: widget.images,
+            initialIndex: nextIndex,
+          ),
+        ),
+      );
+    }
+  }
+
+  void _navigateToPrevious() {
+    if (widget.images == null || _currentIndex <= 0) return;
+    
+    final prevIndex = _currentIndex - 1;
+    final prevItem = widget.images![prevIndex];
+    
+    if (prevItem.isVideo) {
+      // Navigate to previous video
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => VideoViewScreen(
+            videoUrl: prevItem.mediaUrl,
+            title: prevItem.titleHe,
+            image: prevItem,
+            images: widget.images,
+            initialIndex: prevIndex,
+          ),
+        ),
+      );
+    } else {
+      // Navigate to photo view
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => PhotoViewScreen(
+            imageUrl: prevItem.mediaUrl,
+            title: prevItem.titleHe,
+            image: prevItem,
+            images: widget.images,
+            initialIndex: prevIndex,
+          ),
+        ),
+      );
     }
   }
 
@@ -92,9 +169,19 @@ class _VideoViewScreenState extends ConsumerState<VideoViewScreen> {
           appBar: AppBar(
             backgroundColor: Colors.black.withOpacity(0.5),
             elevation: 0,
-            title: Text(
-              widget.title,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+            title: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.title,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                if (widget.images != null && widget.images!.length > 1)
+                  Text(
+                    '${_currentIndex + 1} / ${widget.images!.length}',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+              ],
             ),
             iconTheme: const IconThemeData(color: Colors.white),
             actions: [
@@ -135,60 +222,131 @@ class _VideoViewScreenState extends ConsumerState<VideoViewScreen> {
               ),
             ],
           ),
-          body: Column(
-            children: [
-              // YouTube Player
-              player,
+          body: GestureDetector(
+            onHorizontalDragEnd: (details) {
+              if (widget.images == null || widget.images!.length <= 1) return;
               
-              // Video details
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title
-                        Text(
-                          widget.title,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            height: 1.3,
+              // Swipe right to left (next)
+              if (details.primaryVelocity! < -200) {
+                _navigateToNext();
+              }
+              // Swipe left to right (previous)
+              else if (details.primaryVelocity! > 200) {
+                _navigateToPrevious();
+              }
+            },
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    // YouTube Player
+                    player,
+                    
+                    // Video details
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Title
+                              Text(
+                                widget.title,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  height: 1.3,
+                                ),
+                              ),
+                              
+                              const SizedBox(height: 16),
+                              
+                              // Description if available
+                              if (widget.image.descriptionHe != null && widget.image.descriptionHe!.isNotEmpty) ...[
+                                const Text(
+                                  'תיאור',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  widget.image.descriptionHe!,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.white70,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
+                              
+                              const SizedBox(height: 100), // Space for navigation
+                            ],
                           ),
                         ),
-                        
-                        const SizedBox(height: 16),
-                        
-                        // Description if available
-                        if (widget.image.descriptionHe != null && widget.image.descriptionHe!.isNotEmpty) ...[
-                          const Text(
-                            'תיאור',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            widget.image.descriptionHe!,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.white70,
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
-                        
-                        const SizedBox(height: 100), // Space for navigation
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ),
-            ],
+                
+                // Navigation buttons overlay (only show if there are multiple items)
+                if (widget.images != null && widget.images!.length > 1) ...[
+                  // Previous button
+                  if (_currentIndex > 0)
+                    Positioned(
+                      left: 16,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: _navigateToPrevious,
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_ios,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  
+                  // Next button
+                  if (_currentIndex < widget.images!.length - 1)
+                    Positioned(
+                      right: 16,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: _navigateToNext,
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.arrow_forward_ios,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ],
+            ),
           ),
         );
       },

@@ -8,6 +8,7 @@ import 'package:shared_core/utils/pagination_result.dart';
 import 'package:shared_core/models/gallery_image.dart';
 import 'package:shared_core/models/gallery_album.dart';
 import 'photo_view_screen.dart';
+import 'video_view_screen.dart';
 import '../favorites/favorites_service.dart';
 
 class AlbumDetailScreen extends ConsumerStatefulWidget {
@@ -254,37 +255,70 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen>
     return RepaintBoundary(
       child: GestureDetector(
         onTap: () {
-          final currentIndex = _paginationResult!.items.indexOf(image);
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => PhotoViewScreen(
-                imageUrl: image.imageUrl,
-                title: image.titleHe,
-                image: image,
-                images: _paginationResult!.items,
-                initialIndex: currentIndex,
+          if (image.isVideo) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => VideoViewScreen(
+                  videoUrl: image.mediaUrl,
+                  title: image.titleHe,
+                  image: image,
+                ),
               ),
-            ),
-          );
+            );
+          } else {
+            final currentIndex = _paginationResult!.items.indexOf(image);
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => PhotoViewScreen(
+                  imageUrl: image.mediaUrl,
+                  title: image.titleHe,
+                  image: image,
+                  images: _paginationResult!.items,
+                  initialIndex: currentIndex,
+                ),
+              ),
+            );
+          }
         },
         child: Container(
           decoration: const BoxDecoration(),
           child: ClipRRect(
             borderRadius: BorderRadius.zero,
-            child: CachedNetworkImage(
-              imageUrl: image.getDisplayImageUrl(preferThumbnail: _crossAxisCount > 3),
-              width: double.infinity,
-              height: double.infinity,
-              fit: BoxFit.cover,
-              memCacheWidth: _crossAxisCount > 5 ? 200 : 400,
-              memCacheHeight: _crossAxisCount > 5 ? 200 : 400,
-              maxWidthDiskCache: 800,
-              maxHeightDiskCache: 800,
-              cacheKey: '${image.id}_${_crossAxisCount > 3 ? 'thumb' : 'full'}',
-              fadeInDuration: const Duration(milliseconds: 200),
-              fadeOutDuration: const Duration(milliseconds: 100),
-              placeholder: (context, url) => _buildPlaceholder(),
-              errorWidget: (context, url, error) => _buildErrorWidget(),
+            child: Stack(
+              children: [
+                CachedNetworkImage(
+                  imageUrl: image.getDisplayImageUrl(preferThumbnail: _crossAxisCount > 3),
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  memCacheWidth: _crossAxisCount > 5 ? 200 : 400,
+                  memCacheHeight: _crossAxisCount > 5 ? 200 : 400,
+                  maxWidthDiskCache: 800,
+                  maxHeightDiskCache: 800,
+                  cacheKey: '${image.id}_${_crossAxisCount > 3 ? 'thumb' : 'full'}',
+                  fadeInDuration: const Duration(milliseconds: 200),
+                  fadeOutDuration: const Duration(milliseconds: 100),
+                  placeholder: (context, url) => _buildPlaceholder(),
+                  errorWidget: (context, url, error) => _buildErrorWidget(),
+                ),
+                
+                // Video play overlay
+                if (image.isVideo)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.3),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.play_circle_filled,
+                          color: Colors.white,
+                          size: _crossAxisCount > 8 ? 20 : (_crossAxisCount > 5 ? 30 : 40),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -313,7 +347,7 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen>
       color: Colors.grey[850],
       child: Center(
         child: Icon(
-          Icons.photo,
+          Icons.broken_image,
           size: _crossAxisCount > 8 ? 16 : (_crossAxisCount > 5 ? 20 : 30),
           color: Colors.grey[600],
         ),

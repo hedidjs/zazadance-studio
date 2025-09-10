@@ -116,11 +116,24 @@ class GalleryImage extends BaseModel {
   /// Get the appropriate display URL (for images: thumbnail if available, for videos: YouTube thumbnail)
   String getDisplayImageUrl({bool preferThumbnail = true}) {
     if (mediaType == 'video') {
-      // For YouTube videos, generate thumbnail URL if not provided
+      // For YouTube videos, try different sources in order of preference
+      if (thumbnailUrl != null && thumbnailUrl!.isNotEmpty && !thumbnailUrl!.contains('youtube')) {
+        // If we have a non-YouTube thumbnail URL, use it (uploaded thumbnail)
+        return thumbnailUrl!;
+      }
+      
+      final youTubeThumbnail = getYouTubeThumbnail();
+      if (youTubeThumbnail != null && youTubeThumbnail.isNotEmpty) {
+        return youTubeThumbnail;
+      }
+      
+      // If we have any thumbnail URL as last resort
       if (thumbnailUrl != null && thumbnailUrl!.isNotEmpty) {
         return thumbnailUrl!;
       }
-      return getYouTubeThumbnail() ?? mediaUrl;
+      
+      // Fallback to a default video thumbnail
+      return 'https://via.placeholder.com/320x240/1E1E1E/FFFFFF.png?text=VIDEO';
     }
     
     if (preferThumbnail && thumbnailUrl != null && thumbnailUrl!.isNotEmpty) {
@@ -152,7 +165,8 @@ class GalleryImage extends BaseModel {
       final match = pattern.firstMatch(mediaUrl);
       if (match != null) {
         final videoId = match.group(1);
-        return 'https://img.youtube.com/vi/$videoId/maxresdefault.jpg';
+        // Use mqdefault for better compatibility with Android ImageDecoder
+        return 'https://img.youtube.com/vi/$videoId/mqdefault.jpg';
       }
     }
     return null;

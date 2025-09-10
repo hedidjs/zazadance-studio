@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:shared_core/models/gallery_image.dart';
+import 'video_view_screen.dart';
 import '../favorites/favorites_service.dart';
 
 class PhotoViewScreen extends ConsumerStatefulWidget {
@@ -114,8 +115,42 @@ class _PhotoViewScreenState extends ConsumerState<PhotoViewScreen> {
               scrollPhysics: const BouncingScrollPhysics(),
               builder: (BuildContext context, int index) {
                 final image = widget.images![index];
+                
+                // If this is a video, show a video placeholder with play icon
+                if (image.isVideo) {
+                  return PhotoViewGalleryPageOptions.customChild(
+                    child: Container(
+                      color: Colors.black,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.play_circle_filled,
+                              size: 80,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'החלק לצפייה בסרטון',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    initialScale: PhotoViewComputedScale.contained,
+                    minScale: PhotoViewComputedScale.contained,
+                    maxScale: PhotoViewComputedScale.contained,
+                  );
+                }
+                
+                // Regular image display
                 return PhotoViewGalleryPageOptions(
-                  imageProvider: NetworkImage(image.imageUrl),
+                  imageProvider: NetworkImage(image.mediaUrl),
                   initialScale: PhotoViewComputedScale.contained,
                   minScale: PhotoViewComputedScale.contained,
                   maxScale: PhotoViewComputedScale.covered * 2.0,
@@ -155,6 +190,25 @@ class _PhotoViewScreenState extends ConsumerState<PhotoViewScreen> {
                 setState(() {
                   _currentIndex = index;
                 });
+                
+                // Check if the current item is a video and navigate to VideoViewScreen
+                final currentItem = widget.images![index];
+                if (currentItem.isVideo) {
+                  // Navigate to video screen
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => VideoViewScreen(
+                          videoUrl: currentItem.mediaUrl,
+                          title: currentItem.titleHe,
+                          image: currentItem,
+                          images: widget.images,
+                          initialIndex: index,
+                        ),
+                      ),
+                    );
+                  });
+                }
               },
             )
           : PhotoView(
