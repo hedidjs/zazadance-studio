@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_core/models/gallery_image.dart';
 import '../../providers/theme_provider.dart';
 import '../gallery/photo_view_screen.dart';
+import '../gallery/video_view_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -71,7 +72,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // טעינת תמונות אחרונות מהגלריה
       final galleryResponse = await _supabase
           .from('gallery_images')
-          .select('id, title_he, media_url, thumbnail_url')
+          .select('id, title_he, media_url, thumbnail_url, media_type')
           .eq('is_active', true)
           .order('created_at', ascending: false)
           .limit(6);
@@ -132,6 +133,81 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  Widget _buildImageWidget(Map<String, dynamic> image) {
+    // For videos, create GalleryImage to get proper YouTube thumbnail
+    if ((image['media_type'] ?? 'image') == 'video') {
+      final galleryImage = GalleryImage(
+        id: image['id'] ?? '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        titleHe: image['title_he'] ?? '',
+        mediaUrl: image['media_url'] ?? '',
+        thumbnailUrl: image['thumbnail_url'],
+        mediaType: image['media_type'] ?? 'image',
+      );
+      
+      final imageUrl = galleryImage.getDisplayImageUrl();
+      
+      return CachedNetworkImage(
+        imageUrl: imageUrl,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        placeholder: (context, url) => Container(
+          color: Colors.grey[800],
+          child: const Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFFE91E63),
+              strokeWidth: 2,
+            ),
+          ),
+        ),
+        errorWidget: (context, url, error) => const Center(
+          child: Icon(
+            Icons.video_library,
+            color: Colors.grey,
+            size: 30,
+          ),
+        ),
+      );
+    }
+    
+    // For regular images
+    if ((image['thumbnail_url'] ?? image['media_url']) != null) {
+      return CachedNetworkImage(
+        imageUrl: image['thumbnail_url'] ?? image['media_url'],
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        placeholder: (context, url) => Container(
+          color: Colors.grey[800],
+          child: const Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFFE91E63),
+              strokeWidth: 2,
+            ),
+          ),
+        ),
+        errorWidget: (context, url, error) => const Center(
+          child: Icon(
+            Icons.image,
+            color: Colors.grey,
+            size: 30,
+          ),
+        ),
+      );
+    }
+    
+    // Fallback
+    return const Center(
+      child: Icon(
+        Icons.image,
+        color: Colors.grey,
+        size: 30,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeData = ref.watch(themeProvider);
@@ -177,6 +253,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               
               // גלריה אחרונה
               _buildGallerySection(),
+              
+              const SizedBox(height: 24),
+              
+              // קישורים משפטיים
+              _buildLegalLinksSection(),
               
               const SizedBox(height: 24),
               
@@ -721,15 +802,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     mediaType: image['media_type'] ?? 'image',
                   );
                   
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => PhotoViewScreen(
-                        imageUrl: galleryImage.mediaUrl,
-                        title: galleryImage.titleHe,
-                        image: galleryImage,
+                  if (galleryImage.isVideo) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => VideoViewScreen(
+                          videoUrl: galleryImage.mediaUrl,
+                          title: galleryImage.titleHe,
+                          image: galleryImage,
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  } else {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => PhotoViewScreen(
+                          imageUrl: galleryImage.mediaUrl,
+                          title: galleryImage.titleHe,
+                          image: galleryImage,
+                        ),
+                      ),
+                    );
+                  }
                 },
                 child: Container(
                   decoration: BoxDecoration(
@@ -738,36 +831,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: (image['thumbnail_url'] ?? image['media_url']) != null
-                        ? CachedNetworkImage(
-                            imageUrl: image['thumbnail_url'] ?? image['media_url'],
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                            placeholder: (context, url) => Container(
-                              color: Colors.grey[800],
+                    child: Stack(
+                      children: [
+                        _buildImageWidget(image),
+                        
+                        // Video play overlay
+                        if ((image['media_type'] ?? 'image') == 'video')
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                               child: const Center(
-                                child: CircularProgressIndicator(
-                                  color: Color(0xFFE91E63),
-                                  strokeWidth: 2,
+                                child: Icon(
+                                  Icons.play_circle_filled,
+                                  color: Colors.white,
+                                  size: 40,
                                 ),
                               ),
                             ),
-                            errorWidget: (context, url, error) => const Center(
-                              child: Icon(
-                                Icons.image,
-                                color: Colors.grey,
-                                size: 30,
-                              ),
-                            ),
-                          )
-                        : const Center(
-                            child: Icon(
-                              Icons.image,
-                              color: Colors.grey,
-                              size: 30,
-                            ),
                           ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -833,5 +919,98 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     } catch (e) {
       return '';
     }
+  }
+
+  Widget _buildLegalLinksSection() {
+    final themeData = ref.watch(themeProvider);
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: themeData.cardColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: themeData.primaryColor.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildLegalLink(
+                title: 'מדיניות פרטיות',
+                onTap: () {
+                  // Navigate to privacy policy
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('פותח מדיניות פרטיות')),
+                  );
+                },
+              ),
+              _buildLegalLink(
+                title: 'תנאי שימוש',
+                onTap: () {
+                  // Navigate to terms of service
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('פותח תנאי שימוש')),
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildLegalLink(
+                title: 'הסבר אחריות',
+                onTap: () {
+                  // Navigate to liability disclaimer
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('פותח הסבר אחריות')),
+                  );
+                },
+              ),
+              _buildLegalLink(
+                title: 'יצירת קשר',
+                onTap: () {
+                  context.go('/support');
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegalLink({
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    final themeData = ref.watch(themeProvider);
+    
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: themeData.primaryColor.withOpacity(0.3),
+          ),
+        ),
+        child: Text(
+          title,
+          style: TextStyle(
+            color: themeData.primaryColor,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
   }
 }

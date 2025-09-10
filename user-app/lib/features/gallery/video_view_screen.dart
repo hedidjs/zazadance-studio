@@ -30,6 +30,7 @@ class _VideoViewScreenState extends ConsumerState<VideoViewScreen> {
   late YoutubePlayerController _controller;
   bool _isPlayerReady = false;
   late int _currentIndex;
+  bool _isFullScreen = false;
 
   @override
   void initState() {
@@ -145,13 +146,32 @@ class _VideoViewScreenState extends ConsumerState<VideoViewScreen> {
   Widget build(BuildContext context) {
     return YoutubePlayerBuilder(
       onEnterFullScreen: () {
+        setState(() {
+          _isFullScreen = true;
+        });
         SystemChrome.setPreferredOrientations([
           DeviceOrientation.landscapeLeft,
           DeviceOrientation.landscapeRight,
         ]);
+        // Hide all system UI completely
+        SystemChrome.setEnabledSystemUIMode(
+          SystemUiMode.immersiveSticky,
+          overlays: [],
+        );
+        SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          systemNavigationBarColor: Colors.transparent,
+          statusBarBrightness: Brightness.dark,
+          statusBarIconBrightness: Brightness.light,
+          systemNavigationBarIconBrightness: Brightness.light,
+        ));
       },
       onExitFullScreen: () {
+        setState(() {
+          _isFullScreen = false;
+        });
         SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       },
       player: YoutubePlayer(
         controller: _controller,
@@ -164,6 +184,39 @@ class _VideoViewScreenState extends ConsumerState<VideoViewScreen> {
         },
       ),
       builder: (context, player) {
+        if (_isFullScreen) {
+          // Full screen mode - no scaffold, just the player with gesture controls
+          return Container(
+            color: Colors.black,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: player,
+                ),
+                // Add gesture detector for swipe navigation in fullscreen
+                if (widget.images != null && widget.images!.length > 1)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onHorizontalDragEnd: (details) {
+                        // Swipe right to left (next)
+                        if (details.primaryVelocity! < -200) {
+                          _navigateToNext();
+                        }
+                        // Swipe left to right (previous)
+                        else if (details.primaryVelocity! > 200) {
+                          _navigateToPrevious();
+                        }
+                      },
+                      child: Container(
+                        color: Colors.transparent,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }
+        
         return Scaffold(
           backgroundColor: Colors.black,
           appBar: AppBar(
@@ -235,116 +288,110 @@ class _VideoViewScreenState extends ConsumerState<VideoViewScreen> {
                 _navigateToPrevious();
               }
             },
-            child: Stack(
+            child: Column(
               children: [
-                Column(
-                  children: [
-                    // YouTube Player
-                    player,
-                    
-                    // Video details
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Title
-                              Text(
-                                widget.title,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  height: 1.3,
-                                ),
-                              ),
-                              
-                              const SizedBox(height: 16),
-                              
-                              // Description if available
-                              if (widget.image.descriptionHe != null && widget.image.descriptionHe!.isNotEmpty) ...[
-                                const Text(
-                                  'תיאור',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  widget.image.descriptionHe!,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white70,
-                                    height: 1.5,
-                                  ),
-                                ),
-                              ],
-                              
-                              const SizedBox(height: 100), // Space for navigation
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                // YouTube Player
+                player,
                 
-                // Navigation buttons overlay (only show if there are multiple items)
-                if (widget.images != null && widget.images!.length > 1) ...[
-                  // Previous button
-                  if (_currentIndex > 0)
-                    Positioned(
-                      left: 16,
-                      top: 0,
-                      bottom: 0,
-                      child: Center(
-                        child: GestureDetector(
-                          onTap: _navigateToPrevious,
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.5),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back_ios,
+                // Video details
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Title
+                          Text(
+                            widget.title,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                               color: Colors.white,
-                              size: 24,
+                              height: 1.3,
                             ),
                           ),
-                        ),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // Navigation buttons for multiple items
+                          if (widget.images != null && widget.images!.length > 1)
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // Previous button
+                                  if (_currentIndex > 0)
+                                    ElevatedButton.icon(
+                                      onPressed: _navigateToPrevious,
+                                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                                      label: const Text('קודם', style: TextStyle(color: Colors.white)),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFFE91E63),
+                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                      ),
+                                    )
+                                  else
+                                    const SizedBox(width: 80),
+                                  
+                                  // Navigation indicator
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      '${_currentIndex + 1} / ${widget.images!.length}',
+                                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                                    ),
+                                  ),
+                                  
+                                  // Next button
+                                  if (_currentIndex < widget.images!.length - 1)
+                                    ElevatedButton.icon(
+                                      onPressed: _navigateToNext,
+                                      icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                                      label: const Text('הבא', style: TextStyle(color: Colors.white)),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFFE91E63),
+                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                      ),
+                                    )
+                                  else
+                                    const SizedBox(width: 80),
+                                ],
+                              ),
+                            ),
+                          
+                          // Description if available
+                          if (widget.image.descriptionHe != null && widget.image.descriptionHe!.isNotEmpty) ...[
+                            const Text(
+                              'תיאור',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              widget.image.descriptionHe!,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.white70,
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                          
+                          const SizedBox(height: 50),
+                        ],
                       ),
                     ),
-                  
-                  // Next button
-                  if (_currentIndex < widget.images!.length - 1)
-                    Positioned(
-                      right: 16,
-                      top: 0,
-                      bottom: 0,
-                      child: Center(
-                        child: GestureDetector(
-                          onTap: _navigateToNext,
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.5),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+                  ),
+                ),
               ],
             ),
           ),
