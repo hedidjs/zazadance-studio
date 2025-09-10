@@ -716,14 +716,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     createdAt: DateTime.now(), // Placeholder since we don't have this data
                     updatedAt: DateTime.now(), // Placeholder since we don't have this data
                     titleHe: image['title_he'] ?? '',
-                    imageUrl: image['media_url'] ?? '',
+                    mediaUrl: image['media_url'] ?? '',
                     thumbnailUrl: image['thumbnail_url'],
+                    mediaType: image['media_type'] ?? 'image',
                   );
                   
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => PhotoViewScreen(
-                        imageUrl: galleryImage.imageUrl,
+                        imageUrl: galleryImage.mediaUrl,
                         title: galleryImage.titleHe,
                         image: galleryImage,
                       ),
