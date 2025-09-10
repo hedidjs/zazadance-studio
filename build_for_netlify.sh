@@ -40,8 +40,8 @@ if [ -f "landing-page/favicon.png" ]; then
 fi
 
 echo "📝 Copying support page..."
-if [ -f "support.html" ]; then
-    cp support.html build/ || handle_error "Failed to copy support page"
+if [ -f "landing-page/support.html" ]; then
+    cp landing-page/support.html build/ || handle_error "Failed to copy support page"
     echo "✅ Support page copied successfully"
 else
     echo "⚠️  Support page not found, skipping..."
