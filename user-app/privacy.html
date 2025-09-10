@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="מדיניות פרטיות של אפליקציית ZaZa Dance - הגנה על המידע האישי שלכם">
+    <meta name="keywords" content="מדיניות פרטיות, הגנת נתונים, ZaZa Dance, פרטיות">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="מדיניות פרטיות - ZaZa Dance">
+    <meta property="og:description" content="מדיניות הפרטיות של אפליקציית ZaZa Dance - הגנה על המידע האישי שלכם">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="he_IL">
+    
+    <title>מדיניות פרטיות - ZaZa Dance</title>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="legal-styles.css">
+    
+    <!-- Supabase Client -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://supabase.com/favicon.ico">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">דלג לתוכן העיקרי</a>
+    
+    <div class="container">
+        <header class="header">
+            <h1>מדיניות פרטיות</h1>
+            <p class="subtitle">ZaZa Dance - הגנה על הפרטיות שלכם</p>
+        </header>
+        
+        <nav class="nav-menu" role="navigation" aria-label="תפריט ניווט מסמכים משפטיים">
+            <a href="privacy.html" class="current" aria-current="page">מדיניות פרטיות</a>
+            <a href="terms.html">תנאי שימוש</a>
+            <a href="disclaimer.html">הסבר אחריות</a>
+        </nav>
+        
+        <main id="main-content" class="content" role="main">
+            <div class="loading" id="loading">
+                טוען את מדיניות הפרטיות...
+            </div>
+            
+            <div class="error" id="error" style="display: none;">
+                <h3>שגיאה בטעינת התוכן</h3>
+                <p>מתנצלים, לא הצלחנו לטעון את מדיניות הפרטיות כרגע. אנא נסו שוב מאוחר יותר.</p>
+                <p>ניתן ליצור איתנו קשר ב: <a href="mailto:sharon.art6263@gmail.com">sharon.art6263@gmail.com</a></p>
+            </div>
+            
+            <article id="privacy-content" style="display: none;">
+                <!-- התוכן ייטען כאן דינמית מ-Supabase -->
+            </article>
+        </main>
+        
+        <footer class="footer">
+            <div class="update-info" id="update-info">
+                <!-- תאריך העדכון ייטען דינמית -->
+            </div>
+            <div class="company-info">
+                <strong>ZaZa Dance</strong><br>
+                השקד 68, בית עזרא<br>
+                <a href="mailto:sharon.art6263@gmail.com">sharon.art6263@gmail.com</a> | 
+                <a href="tel:0527274321">0527274321</a>
+            </div>
+        </footer>
+    </div>
+    
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://yyvoavzgapsyycjwirmg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5dm9hdnpnYXBzeXljandpcm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjU2MzgwODgsImV4cCI6MjA0MTIxNDA4OH0.5deTqJhvgdvw4QUPDNxJ7gGW1FQ3qYNqlUQ6IECy34o';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Markdown to HTML converter (simple implementation)
+        function markdownToHtml(markdown) {
+            if (!markdown) return '';
+            
+            let html = markdown
+                // Headers
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                
+                // Bold and Italic
+                .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+                .replace(/\*(.*)\*/gim, '<em>$1</em>')
+                
+                // Lists
+                .replace(/^\* (.*$)/gim, '<li>$1</li>')
+                .replace(/^- (.*$)/gim, '<li>$1</li>')
+                .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+                
+                // Links
+                .replace(/\[([^\]]*)\]\(([^\)]*)\)/gim, '<a href="$2">$1</a>')
+                
+                // Line breaks
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+            
+            // Wrap in paragraphs and fix lists
+            html = '<p>' + html + '</p>';
+            html = html.replace(/<p><li>/g, '<ul><li>');
+            html = html.replace(/<\/li><\/p>/g, '</li></ul>');
+            html = html.replace(/<\/li><br><li>/g, '</li><li>');
+            
+            // Clean up empty paragraphs
+            html = html.replace(/<p><\/p>/g, '');
+            html = html.replace(/<p><br><\/p>/g, '');
+            
+            return html;
+        }
+        
+        // Load privacy policy content
+        async function loadPrivacyPolicy() {
+            try {
+                const { data, error } = await supabase
+                    .from('terms_content')
+                    .select('*')
+                    .eq('content_type', 'privacy')
+                    .eq('is_active', true)
+                    .order('updated_at', { ascending: false })
+                    .limit(1);
+                
+                if (error) {
+                    throw error;
+                }
+                
+                if (data && data.length > 0) {
+                    const privacyData = data[0];
+                    
+                    // Update page title
+                    document.title = privacyData.title_he || 'מדיניות פרטיות - ZaZa Dance';
+                    
+                    // Convert markdown to HTML
+                    const htmlContent = markdownToHtml(privacyData.content_he);
+                    
+                    // Display content
+                    const contentElement = document.getElementById('privacy-content');
+                    contentElement.innerHTML = `
+                        <h1>${privacyData.title_he || 'מדיניות פרטיות'}</h1>
+                        <div class="important-notice">
+                            <h3>🔒 התחייבותנו לפרטיות שלכם</h3>
+                            <p>אנו מתחייבים להגן על הפרטיות והמידע האישי שלכם בהתאם לסטנדרטים הגבוהים ביותר ולחוקי הגנת הפרטיות בישראל.</p>
+                        </div>
+                        ${htmlContent}
+                        <div class="contact-info">
+                            <h3>📞 יצירת קשר בנושאי פרטיות</h3>
+                            <p>
+                                לשאלות על מדיניות הפרטיות:<br>
+                                <a href="mailto:sharon.art6263@gmail.com">sharon.art6263@gmail.com</a><br>
+                                <a href="tel:0527274321">0527274321</a>
+                            </p>
+                        </div>
+                    `;
+                    
+                    // Update footer with last update info
+                    const updateInfo = document.getElementById('update-info');
+                    const updateDate = new Date(privacyData.updated_at).toLocaleDateString('he-IL', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                    updateInfo.innerHTML = `
+                        <strong>עדכון אחרון:</strong> ${updateDate}<br>
+                        <strong>גרסה:</strong> ${privacyData.version || '1.0'}
+                    `;
+                    
+                    // Hide loading and show content
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('privacy-content').style.display = 'block';
+                } else {
+                    throw new Error('לא נמצא תוכן מדיניות פרטיות');
+                }
+            } catch (error) {
+                console.error('Error loading privacy policy:', error);
+                
+                // Show error message
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+        
+        // Analytics (simple page view tracking)
+        function trackPageView() {
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'page_view', {
+                    page_title: 'Privacy Policy',
+                    page_location: window.location.href
+                });
+            }
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPrivacyPolicy();
+            trackPageView();
+            
+            // Set focus for accessibility
+            document.getElementById('main-content').focus();
+        });
+        
+        // Handle network changes
+        window.addEventListener('online', function() {
+            if (document.getElementById('error').style.display !== 'none') {
+                location.reload();
+            }
+        });
+        
+        // Service Worker registration (optional, for offline support)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(function(error) {
+                        console.log('ServiceWorker registration failed');
+                    });
+            });
+        }
+    </script>
+    
+    <!-- Schema.org structured data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "WebPage",
+        "name": "מדיניות פרטיות - ZaZa Dance",
+        "description": "מדיניות הפרטיות של אפליקציית ZaZa Dance",
+        "url": "https://zazadance.com/privacy",
+        "inLanguage": "he",
+        "publisher": {
+            "@type": "Organization",
+            "name": "ZaZa Dance",
+            "email": "sharon.art6263@gmail.com",
+            "telephone": "0527274321",
+            "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "השקד 68",
+                "addressLocality": "בית עזרא",
+                "addressCountry": "IL"
+            }
+        },
+        "dateModified": new Date().toISOString()
+    }
+    </script>
+</body>
+</html>

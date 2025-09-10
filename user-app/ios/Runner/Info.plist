@@ -52,7 +52,7 @@
 	
 	<!-- App Tracking Transparency Usage Description -->
 	<key>NSUserTrackingUsageDescription</key>
-	<string>האפליקציה משתמשת במידע למטרות אימות והתחברות עם גוגל בלבד.</string>
+	<string>אנו אוספים מידע מוגבל כדי לשפר את חוויית השימוש שלך באפליקציה. המידע משמש להתחברות עם Google, שמירת העדפות אישיות ושיפור השירות. המידע לא נמכר לצדדים שלישיים.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
