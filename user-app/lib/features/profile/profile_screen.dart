@@ -358,6 +358,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     
                     // הגדרות נוספות
                     _buildSettings(),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // מחיקת חשבון - מוברז ובולט יותר
+                    _buildDeleteAccountSection(),
                   ],
                 ),
               ),
@@ -806,58 +811,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             },
           ),
           
-          const SizedBox(height: 20),
-          
-          // מחיקת חשבון - אזור מסוכן
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.8), // Make it more visible temporarily
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.red, width: 2), // Make border more visible
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'אזור מסוכן',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'פעולות בלתי הפיכות שעלולות למחוק את כל הנתונים שלך',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white60,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _deleteAccount,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    icon: const Icon(Icons.delete_forever),
-                    label: const Text(
-                      'מחק חשבון לצמיתות',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -886,6 +839,79 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         color: Colors.white60,
       ),
       onTap: onTap,
+    );
+  }
+
+  Widget _buildDeleteAccountSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.withOpacity(0.5), width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.warning, color: Colors.red, size: 24),
+              const SizedBox(width: 8),
+              const Text(
+                'אזור מסוכן',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'פעולות בלתי הפיכות שעלולות למחוק את כל הנתונים שלך לצמיתות!',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white70,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _deleteAccount,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 4,
+              ),
+              icon: const Icon(Icons.delete_forever, size: 24),
+              label: const Text(
+                'מחק חשבון לצמיתות',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'פעולה זו לא ניתנת לביטול ותמחק את כל הנתונים, תמונות והיסטוריית הפעילות שלך.',
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.white54,
+              fontStyle: FontStyle.italic,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }

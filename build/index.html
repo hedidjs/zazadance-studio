@@ -1,39 +1,377 @@
 <!DOCTYPE html>
-<html>
+<html lang="he" dir="rtl">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZaZa Dance - אפליקציית הריקוד שלך</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    
+    <!-- Open Graph meta tags for social media sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://zazadance.com">
+    <meta property="og:title" content="ZaZa Dance - אפליקציית הריקוד שלך">
+    <meta property="og:description" content="סטודיו ZaZa בהנהלת שרון צרפתי. האפליקציה זמינה כעת למכשירי אייפון, אנדרואיד ודפדפן אינטרנט.">
+    <meta property="og:image" content="https://yyvoavzgapsyycjwirmg.supabase.co/storage/v1/object/public/app-assets/logo_1757282133472.png">
+    <meta property="og:site_name" content="ZaZa Dance">
+    <meta property="og:locale" content="he_IL">
+    
+    <!-- Twitter Card meta tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://zazadance.com">
+    <meta name="twitter:title" content="ZaZa Dance - אפליקציית הריקוד שלך">
+    <meta name="twitter:description" content="סטודיו ZaZa בהנהלת שרון צרפתי. האפליקציה זמינה כעת למכשירי אייפון, אנדרואיד ודפדפן אינטרנט.">
+    <meta name="twitter:image" content="https://yyvoavzgapsyycjwirmg.supabase.co/storage/v1/object/public/app-assets/logo_1757282133472.png">
+    
+    <!-- Additional meta tags -->
+    <meta name="description" content="סטודיו ZaZa בהנהלת שרון צרפתי. האפליקציה זמינה כעת למכשירי אייפון, אנדרואיד ודפדפן אינטרנט.">
+    <meta name="keywords" content="ריקוד, דאנס, אפליקציה, ZaZa Dance, שרון צרפתי">
+    <meta name="author" content="ZaZa Dance סטודיו">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
+        body {
+            font-family: 'Heebo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0A0A0A;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
 
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+        .container {
+            text-align: center;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+        }
 
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
-  <base href="/">
+        .logo {
+            max-width: 400px;
+            width: 80%;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="ZaZa Dance">
-  <title>ZaZa Dance</title>
+        .logo img {
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+            object-position: center;
+        }
 
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="ZaZa Dance">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #E91E63, #00BCD4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+            color: rgba(255,255,255,0.8);
+            line-height: 1.6;
+            font-weight: 400;
+        }
 
-  <title>dance_studio_app</title>
-  <link rel="manifest" href="manifest.json">
+        .download-buttons {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .download-btn {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 18px 30px;
+            background: #1A1A1A;
+            border: 2px solid #333;
+            border-radius: 16px;
+            color: white;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 220px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .download-btn:hover {
+            background: #2A2A2A;
+            border-color: #E91E63;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(233, 30, 99, 0.2);
+        }
+
+        .platform-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .ios-icon {
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTMwIDEyLjVIMTBDOC4zNSAxMi41IDcgMTMuODUgNyAxNS41VjMxLjVDNyAzMy4xNSA4LjM1IDM0LjUgMTAgMzQuNUgzMEMzMS42NSAzNC41IDMzIDMzLjE1IDMzIDMxLjVWMTUuNUMzMyAxMy44NSAzMS42NSAxMi41IDMwIDEyLjVaTTIwIDIyLjVDMTguNjIgMjIuNSAxNy41IDIxLjM4IDE3LjUgMjBDMTcuNSAxOC42MiAxOC42MiAxNy41IDIwIDE3LjVDMjEuMzggMTcuNSAyMi41IDE4LjYyIDIyLjUgMjBDMjIuNSAyMS4zOCAyMS4zOCAyMi41IDIwIDIyLjVaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTcuNSA5LjY4NzVMMTcuNSA3LjVDMTcuNSA2LjUzMTI1IDE2LjcxODggNS43NSAxNS43NSA1Ljc1QzE0Ljc4MTIgNS43NSAxNCA2LjUzMTI1IDE0IDcuNVYxMi41QzE1LjA5MzggMTEuMTU2MiAxNi40Njg4IDEwLjIxODggMTcuNSA5LjY4NzVaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMjYgNy41VjEyLjVDMjQuOTA2MiAxMS4xNTYyIDIzLjUzMTIgMTAuMjE4OCAyMi41IDkuNjg3NUwyMi41IDcuNUMyMi41IDYuNTMxMjUgMjMuMjgxMiA1Ljc1IDI0LjI1IDUuNzVDMjUuMjE4OCA1Ljc1IDI2IDYuNTMxMjUgMjYgNy41WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+');
+            background-color: #000;
+        }
+
+        .android-icon {
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEwIDEwSDE2VjE2SDEwVjEwWk0yNCAxMEgzMFYxNkgyNFYxMFpNMTAgMjRIMTZWMzBIMTBWMjRaTTI0IDI0SDMwVjMwSDI0VjI0WiIgZmlsbD0iIzM0QTg1MyIvPgo8cGF0aCBkPSJNMTggMTBIMjJWMTJIMjBWMTRIMThWMTBaIiBmaWxsPSIjMzRBODUzIi8+CjxwYXRoIGQ9Ik04IDEwVjMwSDMyVjEwSDhaIiBzdHJva2U9IiMzNEE4NTMiIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIvPgo8L3N2Zz4=');
+            background-color: #34A853;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading .download-btn {
+            cursor: wait;
+        }
+
+        @media (max-width: 600px) {
+            .logo {
+                width: 90%;
+                max-width: 300px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .download-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .download-btn {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .logo {
+                width: 95%;
+                max-width: 250px;
+            }
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+    <div class="container" id="content">
+        <div class="logo" id="logoContainer">
+            <img src="" alt="לוגו האפליקציה" id="logoImage" style="display: none;">
+        </div>
+        
+        <p class="subtitle" id="appDescription">
+            טוען...
+        </p>
+
+        <div class="download-buttons">
+            <a href="#" class="download-btn" id="iosLink" style="display: none;">
+                <div class="platform-icon ios-icon"></div>
+                <div>
+                    <div style="font-size: 0.9rem; opacity: 0.8;">הורידו עבור</div>
+                    <div>App Store</div>
+                </div>
+            </a>
+
+            <a href="#" class="download-btn" id="androidLink" style="display: none;">
+                <div class="platform-icon android-icon"></div>
+                <div>
+                    <div style="font-size: 0.9rem; opacity: 0.8;">הורידו עבור</div>
+                    <div>Google Play</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div style="margin-bottom: 15px; font-size: 0.85rem; opacity: 0.8;">
+            <a href="/privacy" style="color: inherit; text-decoration: none; margin: 0 8px;">מדיניות פרטיות</a> |
+            <a href="/terms" style="color: inherit; text-decoration: none; margin: 0 8px;">תנאי שימוש</a> |
+            <a href="/disclaimer" style="color: inherit; text-decoration: none; margin: 0 8px;">הסבר אחריות</a>
+        </div>
+        © 2025 זאזא דאנס - סטודיו לריקוד
+    </div>
+
+    <script>
+        // Supabase configuration (same as admin app)
+        const SUPABASE_URL = 'https://yyvoavzgapsyycjwirmg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5dm9hdnpnYXBzeXljandpcm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyOTgyMzgsImV4cCI6MjA3MDg3NDIzOH0.IU_dW_8K-yuV1grWIWJdetU7jK-b-QDPFYp_m5iFP90';
+
+        // Load app configuration from database
+        async function loadAppConfig() {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/app_configuration?select=*&is_active=eq.true`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (response.ok) {
+                    const configs = await response.json();
+                    if (configs.length > 0) {
+                        const config = configs[0];
+                        
+                        // Update page title
+                        if (config.app_name) {
+                            document.title = `${config.app_name} - אפליקציית הריקוד שלך`;
+                        }
+                        
+                        // Update app description
+                        if (config.app_description) {
+                            document.getElementById('appDescription').innerHTML = 
+                                config.app_description.replace(/\n/g, '<br>');
+                        }
+
+                        // Update Open Graph and Twitter meta tags for social sharing
+                        updateMetaTags(config);
+
+                        // Update logo
+                        const logoImage = document.getElementById('logoImage');
+                        const logoContainer = document.getElementById('logoContainer');
+                        
+                        if (config.app_logo_url && config.app_logo_url.trim() !== '') {
+                            logoImage.src = config.app_logo_url;
+                            logoImage.style.display = 'block';
+                        } else {
+                            // Fallback to gradient background with app name initial
+                            logoContainer.innerHTML = config.app_name ? config.app_name.charAt(0) : 'Z';
+                            logoContainer.style.background = 'linear-gradient(135deg, #E91E63, #00BCD4)';
+                            logoContainer.style.borderRadius = '30px';
+                            logoContainer.style.fontSize = '4rem';
+                            logoContainer.style.fontWeight = 'bold';
+                            logoContainer.style.color = 'white';
+                        }
+
+                        // Update download links
+                        const iosLink = document.getElementById('iosLink');
+                        const androidLink = document.getElementById('androidLink');
+
+                        if (config.ios_download_url && config.ios_download_url.trim() !== '') {
+                            // Ensure the URL starts with http:// or https://
+                            let iosUrl = config.ios_download_url.trim();
+                            if (!iosUrl.startsWith('http://') && !iosUrl.startsWith('https://')) {
+                                iosUrl = 'https://' + iosUrl;
+                            }
+                            iosLink.href = iosUrl;
+                            iosLink.style.display = 'flex';
+                        } else {
+                            iosLink.style.display = 'none';
+                        }
+
+                        if (config.android_download_url && config.android_download_url.trim() !== '') {
+                            // Ensure the URL starts with http:// or https://
+                            let androidUrl = config.android_download_url.trim();
+                            if (!androidUrl.startsWith('http://') && !androidUrl.startsWith('https://')) {
+                                androidUrl = 'https://' + androidUrl;
+                            }
+                            androidLink.href = androidUrl;
+                            androidLink.style.display = 'flex';
+                        } else {
+                            androidLink.style.display = 'none';
+                        }
+
+                        // Update footer with app name while preserving legal links
+                        const footer = document.querySelector('.footer');
+                        if (config.app_name) {
+                            footer.innerHTML = `
+                                <div style="margin-bottom: 15px; font-size: 0.85rem; opacity: 0.8;">
+                                    <a href="/privacy" style="color: inherit; text-decoration: none; margin: 0 8px;">מדיניות פרטיות</a> |
+                                    <a href="/terms" style="color: inherit; text-decoration: none; margin: 0 8px;">תנאי שימוש</a> |
+                                    <a href="/disclaimer" style="color: inherit; text-decoration: none; margin: 0 8px;">הסבר אחריות</a>
+                                </div>
+                                © 2025 ${config.app_name} - סטודיו לריקוד
+                            `;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading app config:', error);
+                // Set fallback content
+                document.getElementById('appDescription').innerHTML = 
+                    'האפליקציה המושלמת ללמידת ריקוד<br>הורידו עכשיו ותתחילו לרקוד!';
+            } finally {
+                // Remove loading state
+                document.getElementById('content').classList.remove('loading');
+            }
+        }
+
+        // Function to update meta tags for social media sharing
+        function updateMetaTags(config) {
+            const appName = config.app_name || 'זאזא דאנס';
+            const appDescription = config.app_description || 'האפליקציה המושלמת ללמידת ריקוד - הורידו עכשיו ותתחילו לרקוד!';
+            const appLogo = config.app_logo_url || '';
+
+            // Update Open Graph tags
+            updateMetaTag('og:title', `${appName} - אפליקציית הריקוד שלך`);
+            updateMetaTag('og:description', appDescription);
+            updateMetaTag('og:site_name', appName);
+            if (appLogo) {
+                updateMetaTag('og:image', appLogo);
+            }
+
+            // Update Twitter Card tags  
+            updateMetaTag('twitter:title', `${appName} - אפליקציית הריקוד שלך`);
+            updateMetaTag('twitter:description', appDescription);
+            if (appLogo) {
+                updateMetaTag('twitter:image', appLogo);
+            }
+
+            // Update regular meta tags
+            updateMetaTag('description', appDescription, 'name');
+            updateMetaTag('keywords', `ריקוד, דאנס, אפליקציה, ${appName}`, 'name');
+            updateMetaTag('author', `${appName} סטודיו`, 'name');
+        }
+
+        // Helper function to update or create meta tags
+        function updateMetaTag(property, content, attribute = 'property') {
+            let metaTag = document.querySelector(`meta[${attribute}="${property}"]`);
+            if (metaTag) {
+                metaTag.setAttribute('content', content);
+            } else {
+                metaTag = document.createElement('meta');
+                metaTag.setAttribute(attribute, property);
+                metaTag.setAttribute('content', content);
+                document.head.appendChild(metaTag);
+            }
+        }
+
+        // Load config when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('content').classList.add('loading');
+            loadAppConfig();
+        });
+    </script>
 </body>
 </html>

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 import 'dart:io';
+import '../../services/google_auth_service.dart';
 
 class ProfileSimpleScreen extends ConsumerStatefulWidget {
   const ProfileSimpleScreen({super.key});
@@ -140,6 +141,116 @@ class _ProfileSimpleScreenState extends ConsumerState<ProfileSimpleScreen> {
         setState(() {
           _isUpdating = false;
         });
+      }
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text(
+          'מחיקת חשבון',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'האם אתה בטוח שברצונך למחוק את החשבון?\n\nפעולה זו תמחק לצמיתות:\n• את כל הנתונים שלך\n• תמונות הפרופיל\n• ההיסטוריה שלך באפליקציה\n\nלא ניתן לבטל פעולה זו!',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text(
+              'ביטול',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text(
+              'מחק חשבון',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final doubleConfirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: const Color(0xFF1E1E1E),
+          title: const Text(
+            'אישור אחרון',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: const Text(
+            'זהו האישור האחרון!\n\nלחיצה על "אישור מחיקה" תמחק את החשבון שלך לצמיתות ללא אפשרות שחזור.',
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text(
+                'ביטול',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text(
+                'אישור מחיקה',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (doubleConfirmed == true) {
+        try {
+          setState(() {
+            _isUpdating = true;
+          });
+
+          await GoogleAuthService().deleteUserAccount();
+          
+          if (mounted) {
+            // ניקוי מצב האפליקציה
+            setState(() {
+              _isUpdating = false;
+            });
+            
+            // המתנה קצרה לוודא שה-signOut הושלם
+            await Future.delayed(const Duration(milliseconds: 500));
+            
+            // מעבר מיידי לדף התחברות עם ניקוי מלא של המחסנית
+            context.go('/login');
+            
+            // הצגת הודעת הצלחה
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('החשבון נמחק בהצלחה'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            setState(() {
+              _isUpdating = false;
+            });
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('שגיאה במחיקת החשבון: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
       }
     }
   }
@@ -408,6 +519,78 @@ class _ProfileSimpleScreenState extends ConsumerState<ProfileSimpleScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
+                    ),
+                    
+                    const SizedBox(height: 40),
+                    
+                    // מחיקת חשבון
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E1E1E),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.person_remove, color: Colors.grey, size: 24),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'ניהול חשבון',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'אם תרצה להסיר את החשבון שלך מהאפליקציה',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: _isUpdating ? null : _deleteAccount,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey[700],
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 4,
+                              ),
+                              icon: const Icon(Icons.logout, size: 20),
+                              label: const Text(
+                                'הסר חשבון',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'פעולה זו לא ניתנת לביטול ותמחק את כל הנתונים, תמונות והיסטוריית הפעילות שלך.',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white54,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

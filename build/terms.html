@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="תנאי שימוש באפליקציית ZaZa Dance - כללים והתחייבויות">
+    <meta name="keywords" content="תנאי שימוש, הסכם משתמש, ZaZa Dance, כללים">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="תנאי שימוש - ZaZa Dance">
+    <meta property="og:description" content="תנאי השימוש באפליקציית ZaZa Dance - כללים והתחייבויות">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="he_IL">
+    
+    <title>תנאי שימוש - ZaZa Dance</title>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="legal-styles.css">
+    
+    <!-- Supabase Client -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://supabase.com/favicon.ico">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">דלג לתוכן העיקרי</a>
+    
+    <div class="container">
+        <header class="header">
+            <h1>תנאי שימוש</h1>
+            <p class="subtitle">ZaZa Dance - הכללים וההתחייבויות שלנו</p>
+        </header>
+        
+        <nav class="nav-menu" role="navigation" aria-label="תפריט ניווט מסמכים משפטיים">
+            <a href="privacy.html">מדיניות פרטיות</a>
+            <a href="terms.html" class="current" aria-current="page">תנאי שימוש</a>
+            <a href="disclaimer.html">הסבר אחריות</a>
+        </nav>
+        
+        <main id="main-content" class="content" role="main">
+            <div class="loading" id="loading">
+                טוען את תנאי השימוש...
+            </div>
+            
+            <div class="error" id="error" style="display: none;">
+                <h3>שגיאה בטעינת התוכן</h3>
+                <p>מתנצלים, לא הצלחנו לטעון את תנאי השימוש כרגע. אנא נסו שוב מאוחר יותר.</p>
+                <p>ניתן ליצור איתנו קשר ב: <a href="mailto:sharon.art6263@gmail.com">sharon.art6263@gmail.com</a></p>
+            </div>
+            
+            <article id="terms-content" style="display: none;">
+                <!-- התוכן ייטען כאן דינמית מ-Supabase -->
+            </article>
+        </main>
+        
+        <footer class="footer">
+            <div class="update-info" id="update-info">
+                <!-- תאריך העדכון ייטען דינמית -->
+            </div>
+            <div class="company-info">
+                <strong>ZaZa Dance</strong><br>
+                השקד 68, בית עזרא<br>
+                <a href="mailto:sharon.art6263@gmail.com">sharon.art6263@gmail.com</a> | 
+                <a href="tel:0527274321">0527274321</a>
+            </div>
+        </footer>
+    </div>
+    
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://yyvoavzgapsyycjwirmg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5dm9hdnpnYXBzeXljandpcm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyOTgyMzgsImV4cCI6MjA3MDg3NDIzOH0.IU_dW_8K-yuV1grWIWJdetU7jK-b-QDPFYp_m5iFP90';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Markdown to HTML converter (simple implementation)
+        function markdownToHtml(markdown) {
+            if (!markdown) return '';
+            
+            let html = markdown
+                // Headers
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                
+                // Bold and Italic
+                .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+                .replace(/\*(.*)\*/gim, '<em>$1</em>')
+                
+                // Lists
+                .replace(/^\* (.*$)/gim, '<li>$1</li>')
+                .replace(/^- (.*$)/gim, '<li>$1</li>')
+                .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+                
+                // Links
+                .replace(/\[([^\]]*)\]\(([^\)]*)\)/gim, '<a href="$2">$1</a>')
+                
+                // Line breaks
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+            
+            // Wrap in paragraphs and fix lists
+            html = '<p>' + html + '</p>';
+            html = html.replace(/<p><li>/g, '<ul><li>');
+            html = html.replace(/<\/li><\/p>/g, '</li></ul>');
+            html = html.replace(/<\/li><br><li>/g, '</li><li>');
+            
+            // Clean up empty paragraphs
+            html = html.replace(/<p><\/p>/g, '');
+            html = html.replace(/<p><br><\/p>/g, '');
+            
+            return html;
+        }
+        
+        // Load terms of service content
+        async function loadTermsOfService() {
+            try {
+                const { data, error } = await supabase
+                    .from('terms_content')
+                    .select('*')
+                    .eq('content_type', 'terms')
+                    .eq('is_active', true)
+                    .order('updated_at', { ascending: false })
+                    .limit(1);
+                
+                if (error) {
+                    throw error;
+                }
+                
+                if (data && data.length > 0) {
+                    const termsData = data[0];
+                    
+                    // Update page title
+                    document.title = termsData.title_he || 'תנאי שימוש - ZaZa Dance';
+                    
+                    // Convert markdown to HTML
+                    const htmlContent = markdownToHtml(termsData.content_he);
+                    
+                    // Display content
+                    const contentElement = document.getElementById('terms-content');
+                    contentElement.innerHTML = `
+                        <h1>${termsData.title_he || 'תנאי שימוש'}</h1>
+                        <div class="important-notice">
+                            <h3>📋 התחייבות הדדית</h3>
+                            <p>תנאי השימוש הבאים מגדירים את הכללים וההתחייבויות ההדדיות ביננו לבינכם. השימוש באפליקציה מהווה הסכמה מלאה לתנאים אלה.</p>
+                        </div>
+                        ${htmlContent}
+                        <div class="important-notice">
+                            <h3>✅ הסכמה לתנאים</h3>
+                            <p><strong>השימוש באפליקציית ZaZa Dance מהווה אישור שקראתם, הבנתם והסכמתם לכל התנאים המפורטים לעיל.</strong></p>
+                        </div>
+                        <div class="contact-info">
+                            <h3>📞 יצירת קשר בנושאי תנאי השימוש</h3>
+                            <p>
+                                לשאלות על תנאי השימוש:<br>
+                                <a href="mailto:sharon.art6263@gmail.com">sharon.art6263@gmail.com</a><br>
+                                <a href="tel:0527274321">0527274321</a>
+                            </p>
+                        </div>
+                    `;
+                    
+                    // Update footer with last update info
+                    const updateInfo = document.getElementById('update-info');
+                    const updateDate = new Date(termsData.updated_at).toLocaleDateString('he-IL', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                    updateInfo.innerHTML = `
+                        <strong>עדכון אחרון:</strong> ${updateDate}<br>
+                        <strong>גרסה:</strong> ${termsData.version || '1.0'}
+                    `;
+                    
+                    // Hide loading and show content
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('terms-content').style.display = 'block';
+                } else {
+                    throw new Error('לא נמצא תוכן תנאי שימוש');
+                }
+            } catch (error) {
+                console.error('Error loading terms of service:', error);
+                
+                // Show fallback content instead of error
+                const contentElement = document.getElementById('terms-content');
+                contentElement.innerHTML = `
+                    <h1>תנאי שימוש - ZaZa Dance</h1>
+                    <div class="important-notice">
+                        <h3>📋 תנאי השימוש שלנו</h3>
+                        <p>השימוש באפליקציית ZaZa Dance כפוף לתנאים המפורטים להלן. אנא קראו בעיון לפני השימוש.</p>
+                    </div>
+                    
+                    <h2>1. מבוא וקבלת התנאים</h2>
+                    <p>ברוכים הבאים לאפליקציית ZaZa Dance. על ידי שימוש באפליקציה, אתם מסכימים לתנאי השימוש הללו.</p>
+                    
+                    <h2>2. פרטי החברה</h2>
+                    <ul>
+                        <li><strong>שם:</strong> ZaZa Dance</li>
+                        <li><strong>כתובת:</strong> השקד 68, בית עזרא</li>
+                        <li><strong>אימייל:</strong> sharon.art6263@gmail.com</li>
+                        <li><strong>טלפון:</strong> 0527274321</li>
+                    </ul>
+                    
+                    <h2>3. השירות</h2>
+                    <p>ZaZa Dance מספקת אפליקציה לאימוני ריקוד וכושר לילדים ונוער, במטרה לעודד פעילות גופנית מהנה ובריאה.</p>
+                    
+                    <h2>4. זכויות המשתמש</h2>
+                    <p>כמשתמש, אתם זכאים לגישה לתכני האפליקציה בהתאם למנוי שרכשתם.</p>
+                    
+                    <div class="contact-info">
+                        <h3>📞 יצירת קשר</h3>
+                        <p>
+                            לשאלות על תנאי השימוש:<br>
+                            <a href="mailto:sharon.art6263@gmail.com">sharon.art6263@gmail.com</a><br>
+                            <a href="tel:0527274321">0527274321</a>
+                        </p>
+                    </div>
+                `;
+                
+                // Hide loading and show content
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('terms-content').style.display = 'block';
+            }
+        }
+        
+        // Analytics (simple page view tracking)
+        function trackPageView() {
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'page_view', {
+                    page_title: 'Terms of Service',
+                    page_location: window.location.href
+                });
+            }
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTermsOfService();
+            trackPageView();
+            
+            // Set focus for accessibility
+            document.getElementById('main-content').focus();
+        });
+        
+        // Handle network changes
+        window.addEventListener('online', function() {
+            if (document.getElementById('error').style.display !== 'none') {
+                location.reload();
+            }
+        });
+        
+        // Service Worker registration (optional, for offline support)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(function(error) {
+                        console.log('ServiceWorker registration failed');
+                    });
+            });
+        }
+    </script>
+    
+    <!-- Schema.org structured data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "WebPage",
+        "name": "תנאי שימוש - ZaZa Dance",
+        "description": "תנאי השימוש באפליקציית ZaZa Dance",
+        "url": "https://zazadance.com/terms",
+        "inLanguage": "he",
+        "publisher": {
+            "@type": "Organization",
+            "name": "ZaZa Dance",
+            "email": "sharon.art6263@gmail.com",
+            "telephone": "0527274321",
+            "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "השקד 68",
+                "addressLocality": "בית עזרא",
+                "addressCountry": "IL"
+            }
+        },
+        "dateModified": new Date().toISOString()
+    }
+    </script>
+</body>
+</html>

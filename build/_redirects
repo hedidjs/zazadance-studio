@@ -1,3 +1,10 @@
 # Netlify redirects for admin panel
 /admin/* /admin/index.html 200
+# Support page redirect
+/support /support.html 200
+# Legal pages redirects
+/privacy /privacy.html 200
+/terms /terms.html 200  
+/disclaimer /disclaimer.html 200
+# Fallback to landing page
 /* /index.html 200
