@@ -187,9 +187,42 @@
             } catch (error) {
                 console.error('Error loading disclaimer:', error);
                 
-                // Show error message
+                // Show fallback content instead of error
+                const contentElement = document.getElementById('disclaimer-content');
+                contentElement.innerHTML = `
+                    <h1>הסבר אחריות - ZaZa Dance</h1>
+                    <div class="important-notice">
+                        <h3>⚠️ אזהרת בטיחות חשובה</h3>
+                        <p>לפני השימוש באפליקציה, קראו בעיון את הסבר האחריות. השימוש באפליקציה הוא על אחריותכם האישית. התייעצו עם רופא לפני התחלת כל תוכנית אימון.</p>
+                    </div>
+                    
+                    <h2>1. מבוא</h2>
+                    <p>השימוש באפליקציית ZaZa Dance הוא על אחריותכם האישית. אנא קראו בעיון את הסבר האחריות.</p>
+                    
+                    <h2>2. הגבלת אחריות</h2>
+                    <p>החברה אינה אחראית לכל נזק או פציעה שעלול להיגרם כתוצאה משימוש באפליקציה.</p>
+                    
+                    <h2>3. המלצה רפואית</h2>
+                    <p>אנו ממליצים בחום להתייעץ עם רופא לפני התחלת כל תוכנית אימון או פעילות גופנית.</p>
+                    
+                    <div class="important-notice">
+                        <h3>🏥 המלצה רפואית</h3>
+                        <p><strong>חשוב:</strong> אנו ממליצים בחום להתייעץ עם רופא המשפחה לפני התחלת כל תוכנית אימון או פעילות גופנית חדשה, במיוחד אם יש לכם בעיות בריאותיות קיימות.</p>
+                    </div>
+                    
+                    <div class="contact-info">
+                        <h3>📞 יצירת קשר בנושאי אחריות</h3>
+                        <p>
+                            לשאלות על הסבר האחריות:<br>
+                            <a href="mailto:sharon.art6263@gmail.com">sharon.art6263@gmail.com</a><br>
+                            <a href="tel:0527274321">0527274321</a>
+                        </p>
+                    </div>
+                `;
+                
+                // Hide loading and show content
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('error').style.display = 'block';
+                document.getElementById('disclaimer-content').style.display = 'block';
             }
         }
         

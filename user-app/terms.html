@@ -187,9 +187,45 @@
             } catch (error) {
                 console.error('Error loading terms of service:', error);
                 
-                // Show error message
+                // Show fallback content instead of error
+                const contentElement = document.getElementById('terms-content');
+                contentElement.innerHTML = `
+                    <h1>תנאי שימוש - ZaZa Dance</h1>
+                    <div class="important-notice">
+                        <h3>📋 תנאי השימוש שלנו</h3>
+                        <p>השימוש באפליקציית ZaZa Dance כפוף לתנאים המפורטים להלן. אנא קראו בעיון לפני השימוש.</p>
+                    </div>
+                    
+                    <h2>1. מבוא וקבלת התנאים</h2>
+                    <p>ברוכים הבאים לאפליקציית ZaZa Dance. על ידי שימוש באפליקציה, אתם מסכימים לתנאי השימוש הללו.</p>
+                    
+                    <h2>2. פרטי החברה</h2>
+                    <ul>
+                        <li><strong>שם:</strong> ZaZa Dance</li>
+                        <li><strong>כתובת:</strong> השקד 68, בית עזרא</li>
+                        <li><strong>אימייל:</strong> sharon.art6263@gmail.com</li>
+                        <li><strong>טלפון:</strong> 0527274321</li>
+                    </ul>
+                    
+                    <h2>3. השירות</h2>
+                    <p>ZaZa Dance מספקת אפליקציה לאימוני ריקוד וכושר לילדים ונוער, במטרה לעודד פעילות גופנית מהנה ובריאה.</p>
+                    
+                    <h2>4. זכויות המשתמש</h2>
+                    <p>כמשתמש, אתם זכאים לגישה לתכני האפליקציה בהתאם למנוי שרכשתם.</p>
+                    
+                    <div class="contact-info">
+                        <h3>📞 יצירת קשר</h3>
+                        <p>
+                            לשאלות על תנאי השימוש:<br>
+                            <a href="mailto:sharon.art6263@gmail.com">sharon.art6263@gmail.com</a><br>
+                            <a href="tel:0527274321">0527274321</a>
+                        </p>
+                    </div>
+                `;
+                
+                // Hide loading and show content
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('error').style.display = 'block';
+                document.getElementById('terms-content').style.display = 'block';
             }
         }
         

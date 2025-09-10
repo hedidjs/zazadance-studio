@@ -183,9 +183,44 @@
             } catch (error) {
                 console.error('Error loading privacy policy:', error);
                 
-                // Show error message
+                // Show fallback content instead of error
+                const contentElement = document.getElementById('privacy-content');
+                contentElement.innerHTML = `
+                    <h1>מדיניות פרטיות - ZaZa Dance</h1>
+                    <div class="important-notice">
+                        <h3>🔒 התחייבותנו לפרטיות שלכם</h3>
+                        <p>אנו מתחייבים להגן על הפרטיות והמידע האישי שלכם בהתאם לסטנדרטים הגבוהים ביותר ולחוקי הגנת הפרטיות בישראל.</p>
+                    </div>
+                    <h2>1. מבוא</h2>
+                    <p>ברוכים הבאים לאפליקציית ZaZa Dance. אנו מתחייבים להגן על הפרטיות שלכם ולשמור על המידע האישי שלכם.</p>
+                    
+                    <h2>2. פרטי החברה</h2>
+                    <ul>
+                        <li><strong>שם:</strong> ZaZa Dance</li>
+                        <li><strong>כתובת:</strong> השקד 68, בית עזרא</li>
+                        <li><strong>אימייל:</strong> sharon.art6263@gmail.com</li>
+                        <li><strong>טלפון:</strong> 0527274321</li>
+                    </ul>
+                    
+                    <h2>3. איסוף מידע</h2>
+                    <p>אנו אוספים מידע מוגבל כדי לשפר את חוויית השימוש שלכם באפליקציה. המידע משמש להתחברות עם Google, שמירת העדפות אישיות ושיפור השירות.</p>
+                    
+                    <h2>4. שימוש במידע</h2>
+                    <p>המידע שלכם משמש אך ורק למטרות השירות ולא נמכר לצדדים שלישיים.</p>
+                    
+                    <div class="contact-info">
+                        <h3>📞 יצירת קשר בנושאי פרטיות</h3>
+                        <p>
+                            לשאלות על מדיניות הפרטיות:<br>
+                            <a href="mailto:sharon.art6263@gmail.com">sharon.art6263@gmail.com</a><br>
+                            <a href="tel:0527274321">0527274321</a>
+                        </p>
+                    </div>
+                `;
+                
+                // Hide loading and show content
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('error').style.display = 'block';
+                document.getElementById('privacy-content').style.display = 'block';
             }
         }
         
