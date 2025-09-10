@@ -36,12 +36,20 @@
 
         body {
             font-family: 'Heebo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0A0A0A;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f1419, #1a1a2e);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .container {
