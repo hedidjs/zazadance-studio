@@ -1,15 +1,16 @@
 import 'base_model.dart';
 
-/// Gallery image model
+/// Gallery item model (supports both images and videos)
 class GalleryImage extends BaseModel {
   final String titleHe;
   final String? titleEn;
   final String? descriptionHe;
   final String? descriptionEn;
-  final String imageUrl;
+  final String mediaUrl; // Can be image URL or YouTube video URL
   final String? thumbnailUrl;
   final String? albumId;
   final bool isActive;
+  final String mediaType; // 'image' or 'video'
 
   const GalleryImage({
     required String id,
@@ -19,10 +20,11 @@ class GalleryImage extends BaseModel {
     this.titleEn,
     this.descriptionHe,
     this.descriptionEn,
-    required this.imageUrl,
+    required this.mediaUrl,
     this.thumbnailUrl,
     this.albumId,
     this.isActive = true,
+    this.mediaType = 'image',
   }) : super(
           id: id,
           createdAt: createdAt,
@@ -38,10 +40,11 @@ class GalleryImage extends BaseModel {
       titleEn: json['title_en'],
       descriptionHe: json['description_he'],
       descriptionEn: json['description_en'],
-      imageUrl: json['media_url'] ?? json['image_url'] ?? '',
+      mediaUrl: json['media_url'] ?? json['image_url'] ?? '',
       thumbnailUrl: json['thumbnail_url'],
       albumId: json['album_id'] ?? json['category_id'] ?? json['category'],
       isActive: json['is_active'] ?? true,
+      mediaType: json['media_type'] ?? 'image',
     );
   }
 
@@ -55,10 +58,11 @@ class GalleryImage extends BaseModel {
       'title_en': titleEn,
       'description_he': descriptionHe,
       'description_en': descriptionEn,
-      'media_url': imageUrl,
+      'media_url': mediaUrl,
       'thumbnail_url': thumbnailUrl,
       'album_id': albumId,
       'is_active': isActive,
+      'media_type': mediaType,
     };
   }
 
@@ -71,10 +75,11 @@ class GalleryImage extends BaseModel {
     String? titleEn,
     String? descriptionHe,
     String? descriptionEn,
-    String? imageUrl,
+    String? mediaUrl,
     String? thumbnailUrl,
     String? albumId,
     bool? isActive,
+    String? mediaType,
   }) {
     return GalleryImage(
       id: id ?? this.id,
@@ -84,10 +89,11 @@ class GalleryImage extends BaseModel {
       titleEn: titleEn ?? this.titleEn,
       descriptionHe: descriptionHe ?? this.descriptionHe,
       descriptionEn: descriptionEn ?? this.descriptionEn,
-      imageUrl: imageUrl ?? this.imageUrl,
+      mediaUrl: mediaUrl ?? this.mediaUrl,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       albumId: albumId ?? this.albumId,
       isActive: isActive ?? this.isActive,
+      mediaType: mediaType ?? this.mediaType,
     );
   }
 
@@ -107,17 +113,54 @@ class GalleryImage extends BaseModel {
     return descriptionHe;
   }
 
-  /// Get the appropriate image URL (thumbnail if available, otherwise full image)
+  /// Get the appropriate display URL (for images: thumbnail if available, for videos: YouTube thumbnail)
   String getDisplayImageUrl({bool preferThumbnail = true}) {
+    if (mediaType == 'video') {
+      // For YouTube videos, generate thumbnail URL if not provided
+      if (thumbnailUrl != null && thumbnailUrl!.isNotEmpty) {
+        return thumbnailUrl!;
+      }
+      return getYouTubeThumbnail() ?? mediaUrl;
+    }
+    
     if (preferThumbnail && thumbnailUrl != null && thumbnailUrl!.isNotEmpty) {
       return thumbnailUrl!;
     }
-    return imageUrl;
+    return mediaUrl;
   }
 
-  /// Check if this image has a thumbnail
+  /// Check if this item has a thumbnail
   bool get hasThumbnail => thumbnailUrl != null && thumbnailUrl!.isNotEmpty;
+
+  /// Check if this is a video item
+  bool get isVideo => mediaType == 'video';
+
+  /// Check if this is an image item
+  bool get isImage => mediaType == 'image';
+
+  /// Get YouTube thumbnail URL from video URL
+  String? getYouTubeThumbnail() {
+    if (!isVideo) return null;
+    
+    // Extract YouTube video ID from various URL formats
+    final patterns = [
+      RegExp(r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)'),
+      RegExp(r'youtube\.com\/v\/([^&\n?#]+)'),
+    ];
+    
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(mediaUrl);
+      if (match != null) {
+        final videoId = match.group(1);
+        return 'https://img.youtube.com/vi/$videoId/maxresdefault.jpg';
+      }
+    }
+    return null;
+  }
 
   /// Get formatted album ID
   String get displayAlbumId => albumId ?? 'כללי';
+
+  /// For backward compatibility - get image URL
+  String get imageUrl => mediaUrl;
 }

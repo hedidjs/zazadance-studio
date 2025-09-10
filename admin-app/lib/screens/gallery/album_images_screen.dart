@@ -59,7 +59,7 @@ class _AlbumImagesScreenState extends State<AlbumImagesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('תמונות - ${widget.album['name_he']}'),
+        title: Text('מדיה - ${widget.album['name_he']}'),
         backgroundColor: const Color(0xFF1A1A1A),
         foregroundColor: Colors.white,
         actions: [
@@ -97,15 +97,58 @@ class _AlbumImagesScreenState extends State<AlbumImagesScreen> {
                 tooltip: 'מחיקה מרובה',
               ),
             const SizedBox(width: 8),
-            ElevatedButton.icon(
-              onPressed: _showAddImageDialog,
-              icon: const Icon(Icons.add_photo_alternate),
-              label: const Text('הוסף תמונות'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE91E63),
-                foregroundColor: Colors.white,
+            // Dropdown menu for adding media
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                switch (value) {
+                  case 'image':
+                    _showAddImageDialog();
+                    break;
+                  case 'video':
+                    _showAddVideoDialog();
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'image',
+                  child: Row(
+                    children: [
+                      Icon(Icons.add_photo_alternate, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text('הוסף תמונות', style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'video',
+                  child: Row(
+                    children: [
+                      Icon(Icons.videocam, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text('הוסף סרטון YouTube', style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                ),
+              ],
+              child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE91E63),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text('הוסף מדיה', style: TextStyle(color: Colors.white)),
+                    SizedBox(width: 4),
+                    Icon(Icons.arrow_drop_down, color: Colors.white),
+                  ],
+                ),
               ),
+              color: const Color(0xFF2A2A2A),
             ),
             const SizedBox(width: 16),
             IconButton(
@@ -139,7 +182,7 @@ class _AlbumImagesScreenState extends State<AlbumImagesScreen> {
             ),
             SizedBox(height: 16),
             Text(
-              'אין תמונות באלבום זה',
+              'אין פריטים באלבום זה',
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.white54,
@@ -147,7 +190,7 @@ class _AlbumImagesScreenState extends State<AlbumImagesScreen> {
             ),
             SizedBox(height: 8),
             Text(
-              'לחץ על "הוסף תמונות" כדי להתחיל',
+              'לחץ על "הוסף מדיה" כדי להתחיל',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.white38,
@@ -195,15 +238,37 @@ class _AlbumImagesScreenState extends State<AlbumImagesScreen> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(4),
-              child: _isValidImageUrl(image['thumbnail_url'] ?? image['media_url'])
-                  ? Image.network(
-                      image['thumbnail_url'] ?? image['media_url'],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return _buildPlaceholderImage();
-                      },
-                    )
-                  : _buildPlaceholderImage(),
+              child: Stack(
+                children: [
+                  // Display thumbnail/image
+                  _isValidImageUrl(image['thumbnail_url'] ?? image['media_url'])
+                      ? Image.network(
+                          image['thumbnail_url'] ?? image['media_url'],
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorBuilder: (context, error, stackTrace) {
+                            return _buildPlaceholderImage(image);
+                          },
+                        )
+                      : _buildPlaceholderImage(image),
+                  
+                  // Video play button overlay
+                  if (image['media_type'] == 'video')
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black.withOpacity(0.3),
+                        child: const Center(
+                          child: Icon(
+                            Icons.play_circle_filled,
+                            color: Colors.white,
+                            size: 40,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
             ),
           ),
@@ -299,10 +364,11 @@ class _AlbumImagesScreenState extends State<AlbumImagesScreen> {
     );
   }
 
-  Widget _buildPlaceholderImage() {
-    return const Center(
+  Widget _buildPlaceholderImage([Map<String, dynamic>? item]) {
+    final isVideo = item?['media_type'] == 'video';
+    return Center(
       child: Icon(
-        Icons.image,
+        isVideo ? Icons.videocam : Icons.image,
         color: Colors.white38,
         size: 40,
       ),
@@ -630,6 +696,7 @@ class _AlbumImagesScreenState extends State<AlbumImagesScreen> {
           'album_id': widget.album['id'],
           'is_active': true,
           'is_published': true,
+          'media_type': 'image',
           'created_at': DateTime.now().toIso8601String(),
         });
       }
@@ -640,6 +707,198 @@ class _AlbumImagesScreenState extends State<AlbumImagesScreen> {
     }
   }
 
+  void _showAddVideoDialog() {
+    final TextEditingController titleController = TextEditingController();
+    final TextEditingController urlController = TextEditingController();
+    final TextEditingController descriptionController = TextEditingController();
+    String? thumbnailUrl;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: const Color(0xFF1E1E1E),
+          title: const Text(
+            'הוספת סרטון YouTube',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: SizedBox(
+            width: 500,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // כותרת
+                TextField(
+                  controller: titleController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: 'כותרת הסרטון',
+                    labelStyle: TextStyle(color: Colors.white70),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white30),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFE91E63)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // URL של YouTube
+                TextField(
+                  controller: urlController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: 'קישור YouTube',
+                    hintText: 'https://www.youtube.com/watch?v=...',
+                    hintStyle: TextStyle(color: Colors.white30),
+                    labelStyle: TextStyle(color: Colors.white70),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white30),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFE91E63)),
+                    ),
+                  ),
+                  onChanged: (value) {
+                    // Generate thumbnail automatically
+                    final thumbnail = _getYouTubeThumbnail(value);
+                    setState(() {
+                      thumbnailUrl = thumbnail;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // תיאור
+                TextField(
+                  controller: descriptionController,
+                  maxLines: 3,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: 'תיאור (אופציונלי)',
+                    labelStyle: TextStyle(color: Colors.white70),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white30),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFE91E63)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // תצוגת התמונה הזעירה של YouTube
+                if (thumbnailUrl != null)
+                  Container(
+                    width: 120,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.grey[800],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        thumbnailUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Icon(
+                              Icons.videocam,
+                              color: Colors.white54,
+                              size: 40,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'ביטול',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (titleController.text.trim().isEmpty) {
+                  _showErrorSnackBar('יש להזין כותרת לסרטון');
+                  return;
+                }
+                if (urlController.text.trim().isEmpty) {
+                  _showErrorSnackBar('יש להזין קישור YouTube');
+                  return;
+                }
+                
+                await _uploadVideo(
+                  titleController.text.trim(),
+                  urlController.text.trim(),
+                  descriptionController.text.trim(),
+                  thumbnailUrl,
+                );
+                
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  _loadImages();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE91E63),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('הוסף סרטון'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String? _getYouTubeThumbnail(String videoUrl) {
+    if (videoUrl.isEmpty) return null;
+    
+    // Extract YouTube video ID from various URL formats
+    final patterns = [
+      RegExp(r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)'),
+      RegExp(r'youtube\.com\/v\/([^&\n?#]+)'),
+    ];
+    
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(videoUrl);
+      if (match != null) {
+        final videoId = match.group(1);
+        return 'https://img.youtube.com/vi/$videoId/maxresdefault.jpg';
+      }
+    }
+    return null;
+  }
+
+  Future<void> _uploadVideo(String title, String videoUrl, String description, String? thumbnailUrl) async {
+    try {
+      await _supabase.from('gallery_images').insert({
+        'title_he': title,
+        'description_he': description.isEmpty ? null : description,
+        'media_url': videoUrl,
+        'thumbnail_url': thumbnailUrl,
+        'album_id': widget.album['id'],
+        'is_active': true,
+        'is_published': true,
+        'media_type': 'video',
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      _showSuccessSnackBar('הסרטון נוסף בהצלחה');
+    } catch (e) {
+      _showErrorSnackBar('שגיאה בהוספת הסרטון: $e');
+    }
+  }
 
   void _showDeleteImageDialog(Map<String, dynamic> image) {
     if (!mounted) return;

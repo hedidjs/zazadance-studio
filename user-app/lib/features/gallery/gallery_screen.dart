@@ -7,6 +7,7 @@ import 'package:shared_core/repositories/gallery_repository.dart';
 import 'package:shared_core/utils/pagination_result.dart';
 import 'package:shared_core/models/gallery_image.dart';
 import 'photo_view_screen.dart';
+import 'video_view_screen.dart';
 import '../favorites/favorites_service.dart';
 
 class GalleryScreen extends ConsumerStatefulWidget {
@@ -115,7 +116,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
 
   Future<void> _loadCategories() async {
     try {
-      final categories = await _galleryRepository.getGalleryCategories();
+      final categories = await (_galleryRepository as SupabaseGalleryRepository).getGalleryCategories();
       if (mounted) {
         setState(() {
           _categories = categories;
@@ -405,15 +406,27 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
   Widget _buildGalleryCard(GalleryImage image) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => PhotoViewScreen(
-              imageUrl: image.imageUrl,
-              title: image.titleHe,
-              image: image,
+        if (image.isVideo) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => VideoViewScreen(
+                videoUrl: image.mediaUrl,
+                title: image.titleHe,
+                image: image,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => PhotoViewScreen(
+                imageUrl: image.mediaUrl,
+                title: image.titleHe,
+                image: image,
+              ),
+            ),
+          );
+        }
       },
       child: Container(
         decoration: BoxDecoration(
@@ -430,30 +443,52 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(_crossAxisCount == 1 ? 0 : 8),
-          child: CachedNetworkImage(
-            imageUrl: image.getDisplayImageUrl(preferThumbnail: _crossAxisCount > 3),
-            width: double.infinity,
-            height: double.infinity,
-            fit: BoxFit.cover,
-            placeholder: (context, url) => Container(
-              color: Colors.grey[800],
-              child: const Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFFE91E63),
-                  strokeWidth: 2,
+          child: Stack(
+            children: [
+              CachedNetworkImage(
+                imageUrl: image.getDisplayImageUrl(preferThumbnail: _crossAxisCount > 3),
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  color: Colors.grey[800],
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFE91E63),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: Colors.grey[800],
+                  child: Center(
+                    child: Icon(
+                      image.isVideo ? Icons.videocam : Icons.photo,
+                      size: 30,
+                      color: Colors.white54,
+                    ),
+                  ),
                 ),
               ),
-            ),
-            errorWidget: (context, url, error) => Container(
-              color: Colors.grey[800],
-              child: const Center(
-                child: Icon(
-                  Icons.photo,
-                  size: 30,
-                  color: Colors.white54,
+              
+              // Video play overlay
+              if (image.isVideo)
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(_crossAxisCount == 1 ? 0 : 8),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.play_circle_filled,
+                        color: Colors.white,
+                        size: 40,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
+            ],
           ),
         ),
       ),

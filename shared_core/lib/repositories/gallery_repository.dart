@@ -52,6 +52,7 @@ abstract class GalleryRepository {
   
   Future<GalleryOperationResult> getGalleryImage(String imageId);
   Future<GalleryOperationResult> uploadGalleryImage(GalleryImage image);
+  Future<GalleryOperationResult> uploadGalleryVideo(GalleryImage video);
   Future<GalleryOperationResult> updateGalleryImage(String imageId, GalleryImage updatedImage);
   Future<GalleryOperationResult> deleteGalleryImage(String imageId);
   Future<int> getTotalGalleryImagesCount({String? category});
@@ -78,7 +79,7 @@ class SupabaseGalleryRepository implements GalleryRepository {
       // Build query with filters
       var query = Supabase.instance.client
           .from(_tableName)
-          .select('id, title_he, title_en, description_he, description_en, media_url, thumbnail_url, album_id, is_active, created_at, updated_at');
+          .select('id, title_he, title_en, description_he, description_en, media_url, thumbnail_url, album_id, is_active, media_type, created_at, updated_at');
 
       // Apply filters
       if (category != null && category.isNotEmpty) {
@@ -171,6 +172,27 @@ class SupabaseGalleryRepository implements GalleryRepository {
   }
 
   @override
+  Future<GalleryOperationResult> uploadGalleryVideo(GalleryImage video) async {
+    try {
+      // Generate YouTube thumbnail if not provided
+      final videoWithThumbnail = video.thumbnailUrl == null || video.thumbnailUrl!.isEmpty
+          ? video.copyWith(thumbnailUrl: video.getYouTubeThumbnail())
+          : video;
+
+      final response = await Supabase.instance.client
+          .from(_tableName)
+          .insert(videoWithThumbnail.toJson())
+          .select()
+          .single();
+
+      final uploadedVideo = GalleryImage.fromJson(response);
+      return GalleryOperationResult.success(image: uploadedVideo);
+    } catch (e) {
+      return GalleryOperationResult.failure('Failed to upload gallery video: ${e.toString()}');
+    }
+  }
+
+  @override
   Future<GalleryOperationResult> updateGalleryImage(String imageId, GalleryImage updatedImage) async {
     try {
       final response = await Supabase.instance.client
@@ -221,6 +243,11 @@ class SupabaseGalleryRepository implements GalleryRepository {
     } catch (e) {
       throw DatabaseException('Failed to get gallery images count: ${e.toString()}');
     }
+  }
+
+  /// Get gallery categories for filtering (backward compatibility method)
+  Future<List<Map<String, String>>> getGalleryCategories() async {
+    return await getGalleryAlbumsForFiltering();
   }
 
   /// Get gallery albums for filtering
