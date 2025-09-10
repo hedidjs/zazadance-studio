@@ -50,9 +50,6 @@
 	<key>GIDClientID</key>
 	<string>409450161677-83pgsdvneoc9uh03dq4n602l1j7pdtc3.apps.googleusercontent.com</string>
 	
-	<!-- App Tracking Transparency Usage Description -->
-	<key>NSUserTrackingUsageDescription</key>
-	<string>אנו אוספים מידע מוגבל כדי לשפר את חוויית השימוש שלך באפליקציה. המידע משמש להתחברות עם Google, שמירת העדפות אישיות ושיפור השירות. המידע לא נמכר לצדדים שלישיים.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
