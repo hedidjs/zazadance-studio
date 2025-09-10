@@ -61,15 +61,20 @@ class _ContactMessagesScreenState extends State<ContactMessagesScreen> {
 
   Future<void> _updateMessageStatus(String messageId, String newStatus) async {
     try {
-      await _supabase.from('contact_messages').update({
+      print('Updating message $messageId to status $newStatus');
+      
+      final response = await _supabase.from('contact_messages').update({
         'status': newStatus,
       }).eq('id', messageId);
+      
+      print('Update response: $response');
 
       if (mounted) {
         _showSuccessSnackBar('סטטוס ההודעה עודכן בהצלחה');
         _loadMessages(); // Reload to show updated status
       }
     } catch (e) {
+      print('Error updating message status: $e');
       if (mounted) {
         _showErrorSnackBar('שגיאה בעדכון סטטוס ההודעה: $e');
       }
@@ -154,10 +159,13 @@ class _ContactMessagesScreenState extends State<ContactMessagesScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: Colors.grey[800],
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(message['message']),
+                child: Text(
+                  message['message'],
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -169,6 +177,7 @@ class _ContactMessagesScreenState extends State<ContactMessagesScreen> {
           ),
           PopupMenuButton<String>(
             onSelected: (String value) {
+              print('PopupMenu selected: $value for message ID: ${message['id']}');
               Navigator.of(context).pop();
               if (value == 'delete') {
                 _confirmDeleteMessage(message);
