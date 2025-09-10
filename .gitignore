@@ -60,3 +60,6 @@ Thumbs.db
 
 # Local development
 **/*.local
+
+# Flutter SDK (downloaded by Netlify)
+flutter/

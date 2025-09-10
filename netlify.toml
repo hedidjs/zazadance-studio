@@ -5,7 +5,6 @@
 [build.environment]
   NODE_VERSION = "18"
   FLUTTER_VERSION = "3.24.3"
-  FLUTTER_ROOT = "$PWD/flutter"
 
 # Redirects and rewrites
 [[redirects]]
