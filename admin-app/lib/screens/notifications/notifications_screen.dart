@@ -198,11 +198,98 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     
     dataMap.forEach((key, value) {
       if (value != null) {
-        buffer.writeln('$key: $value');
+        String formattedKey = _getHebrewKeyName(key);
+        String formattedValue = _formatValue(key, value);
+        buffer.writeln('$formattedKey: $formattedValue');
       }
     });
     
-    return buffer.toString();
+    return buffer.toString().trim();
+  }
+
+  String _getHebrewKeyName(String key) {
+    switch (key) {
+      case 'user_id':
+        return 'מזהה משתמש';
+      case 'user_email':
+        return 'כתובת מייל';
+      case 'order_id':
+        return 'מזהה הזמנה';
+      case 'order_number':
+        return 'מספר הזמנה';
+      case 'total_amount':
+        return 'סכום כולל';
+      case 'items_count':
+        return 'כמות פריטים';
+      case 'status':
+        return 'סטטוס';
+      case 'created_at':
+        return 'תאריך יצירה';
+      case 'name':
+        return 'שם';
+      case 'email':
+        return 'מייל';
+      case 'phone':
+        return 'טלפון';
+      case 'subject':
+        return 'נושא';
+      case 'message':
+        return 'הודעה';
+      case 'message_id':
+        return 'מזהה הודעה';
+      case 'like_id':
+        return 'מזהה לייק';
+      case 'content_type':
+        return 'סוג תוכן';
+      case 'content_id':
+        return 'מזהה תוכן';
+      case 'deleted_at':
+        return 'תאריך מחיקה';
+      default:
+        return key;
+    }
+  }
+
+  String _formatValue(String key, dynamic value) {
+    if (value == null) return '';
+    
+    switch (key) {
+      case 'total_amount':
+        return '₪$value';
+      case 'status':
+        return _getHebrewStatus(value.toString());
+      case 'created_at':
+      case 'deleted_at':
+        try {
+          final date = DateTime.parse(value.toString());
+          return DateFormat('dd/MM/yyyy HH:mm').format(date);
+        } catch (e) {
+          return value.toString();
+        }
+      default:
+        return value.toString();
+    }
+  }
+
+  String _getHebrewStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'ממתין';
+      case 'completed':
+        return 'הושלם';
+      case 'cancelled':
+        return 'בוטל';
+      case 'processing':
+        return 'בטיפול';
+      case 'new':
+        return 'חדש';
+      case 'read':
+        return 'נקרא';
+      case 'unread':
+        return 'לא נקרא';
+      default:
+        return status;
+    }
   }
 
   Color _getNotificationTypeColor(String type) {
