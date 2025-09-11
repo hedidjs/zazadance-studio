@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:typed_data';
+import 'dart:math';
 
 class StoreManagementScreen extends StatefulWidget {
   const StoreManagementScreen({super.key});
@@ -1778,6 +1779,41 @@ class _StoreManagementScreenState extends State<StoreManagementScreen> with Sing
             ),
           ],
         ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit, color: Color(0xFF00BCD4), size: 24),
+              onPressed: () => _editOrder(order),
+              tooltip: 'ערוך הזמנה',
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red, size: 24),
+              onPressed: () => _deleteOrder(order['id'], order['order_number']),
+              tooltip: 'מחק הזמנה',
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            ),
+            PopupMenuButton<String>(
+              color: const Color(0xFF2A2A2A),
+              onSelected: (value) => _updateOrderStatus(order['id'], value),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              itemBuilder: (context) => _statusOptions
+                  .where((status) => status['value'] != 'all' && status['value'] != order['status'])
+                  .map((status) => PopupMenuItem<String>(
+                        value: status['value'],
+                        child: Text(
+                          'שנה ל${status['label']}',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ],
+        ),
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
@@ -2010,6 +2046,66 @@ class _StoreManagementScreenState extends State<StoreManagementScreen> with Sing
       orElse: () => {'value': status, 'label': status},
     );
     return statusOption['label']!;
+  }
+
+  Future<void> _deleteOrder(String orderId, String orderNumber) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text(
+          'מחק הזמנה',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          'האם אתה בטוח שברצונך למחוק את הזמנה #$orderNumber?\nפעולה זו בלתי הפיכה.',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('ביטול', style: TextStyle(color: Colors.white70)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('מחק'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        // מחיקת פריטי ההזמנה תחילה
+        await _supabase
+            .from('order_items')
+            .delete()
+            .eq('order_id', orderId);
+
+        // מחיקת ההזמנה
+        await _supabase
+            .from('orders')
+            .delete()
+            .eq('id', orderId);
+
+        _showSuccessSnackBar('הזמנה #$orderNumber נמחקה בהצלחה');
+        _loadOrders();
+      } catch (e) {
+        _showErrorSnackBar('שגיאה במחיקת הזמנה: $e');
+      }
+    }
+  }
+
+  void _editOrder(Map<String, dynamic> order) {
+    showDialog(
+      context: context,
+      builder: (context) => _EditOrderDialog(
+        order: order,
+        onOrderUpdated: _loadOrders,
+        supabase: _supabase,
+      ),
+    );
   }
 
   void _showAddOrderDialog() {
@@ -2619,9 +2715,13 @@ class _CreateOrderDialogState extends State<_CreateOrderDialog> {
           userId = existingUsers.first['id'];
         } else {
           // יצירת פרופיל משתמש חדש
+          final uuid = DateTime.now().millisecondsSinceEpoch.toString() + 
+                      (1000 + Random().nextInt(9000)).toString();
+          
           final newUserProfile = await widget.supabase
               .from('user_profiles')
               .insert({
+                'id': uuid,
                 'display_name': _customerNameController.text.trim(),
                 'phone': _customerPhoneController.text.trim(),
                 'email': _customerEmailController.text.trim().isEmpty 
@@ -2876,5 +2976,438 @@ class _AddOrderItemDialogState extends State<_AddOrderItemDialog> {
 
     widget.onItemAdded(newItem);
     Navigator.pop(context);
+  }
+}
+
+class _EditOrderDialog extends StatefulWidget {
+  final Map<String, dynamic> order;
+  final VoidCallback onOrderUpdated;
+  final SupabaseClient supabase;
+
+  const _EditOrderDialog({
+    required this.order,
+    required this.onOrderUpdated,
+    required this.supabase,
+  });
+
+  @override
+  State<_EditOrderDialog> createState() => _EditOrderDialogState();
+}
+
+class _EditOrderDialogState extends State<_EditOrderDialog> {
+  late List<Map<String, dynamic>> _orderItems;
+  late TextEditingController _notesController;
+  bool _isLoading = false;
+  bool _hasChanges = false;
+  List<Map<String, dynamic>> _availableProducts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _orderItems = List<Map<String, dynamic>>.from(widget.order['order_items'] ?? []);
+    _notesController = TextEditingController(text: widget.order['notes'] ?? '');
+    _loadAvailableProducts();
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadAvailableProducts() async {
+    try {
+      final response = await widget.supabase
+          .from('products')
+          .select('id, name_he, price, image_url, product_type')
+          .eq('is_active', true)
+          .order('name_he');
+
+      setState(() {
+        _availableProducts = List<Map<String, dynamic>>.from(response);
+      });
+    } catch (e) {
+      print('Error loading products: $e');
+    }
+  }
+
+  double get _totalAmount {
+    return _orderItems.fold<double>(0.0, (sum, item) {
+      final quantity = item['quantity'] ?? 0;
+      final unitPrice = (item['unit_price'] ?? 0.0) as double;
+      return sum + (quantity * unitPrice);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: const Color(0xFF1E1E1E),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.8,
+        height: MediaQuery.of(context).size.height * 0.8,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'עריכת הזמנה #${widget.order['order_number']}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close, color: Colors.white70),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        'פריטים בהזמנה:',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      ElevatedButton.icon(
+                        onPressed: _addNewItem,
+                        icon: const Icon(Icons.add),
+                        label: const Text('הוסף פריט'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF00BCD4),
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: _orderItems.length,
+                      itemBuilder: (context, index) {
+                        return _buildOrderItemEditor(index);
+                      },
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  TextField(
+                    controller: _notesController,
+                    maxLines: 3,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      labelText: 'הערות',
+                      labelStyle: TextStyle(color: Colors.white70),
+                      border: OutlineInputBorder(),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white30),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFF00BCD4)),
+                      ),
+                    ),
+                    onChanged: (value) => _markAsChanged(),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2A2A2A),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text(
+                          'סה"כ:',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '₪${_totalAmount.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            color: Color(0xFFE91E63),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      'ביטול',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _hasChanges && !_isLoading ? _saveChanges : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE91E63),
+                      foregroundColor: Colors.white,
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text('שמור שינויים'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrderItemEditor(int index) {
+    final item = _orderItems[index];
+    final product = item['products'];
+    final size = item['product_sizes'];
+    
+    return Card(
+      color: const Color(0xFF2A2A2A),
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: product?['image_url'] != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        product['image_url'],
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.image,
+                          color: Colors.white54,
+                        ),
+                      ),
+                    )
+                  : const Icon(Icons.image, color: Colors.white54),
+            ),
+            const SizedBox(width: 12),
+            
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product?['name_he'] ?? 'מוצר לא זמין',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  if (size != null)
+                    Text(
+                      'מידה: ${size['name']}',
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                ],
+              ),
+            ),
+            
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: () => _updateQuantity(index, item['quantity'] - 1),
+                  icon: const Icon(Icons.remove, color: Colors.white70, size: 16),
+                ),
+                Container(
+                  width: 40,
+                  child: Text(
+                    '${item['quantity']}',
+                    style: const TextStyle(color: Colors.white),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => _updateQuantity(index, item['quantity'] + 1),
+                  icon: const Icon(Icons.add, color: Colors.white70, size: 16),
+                ),
+              ],
+            ),
+            
+            const SizedBox(width: 12),
+            
+            Text(
+              '₪${item['total_price']?.toString() ?? '0'}',
+              style: const TextStyle(
+                color: Color(0xFFE91E63),
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            
+            IconButton(
+              onPressed: () => _removeItem(index),
+              icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+              tooltip: 'הסר פריט',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _updateQuantity(int index, int newQuantity) {
+    if (newQuantity <= 0) {
+      _removeItem(index);
+      return;
+    }
+    
+    setState(() {
+      _orderItems[index]['quantity'] = newQuantity;
+      _orderItems[index]['total_price'] = 
+          newQuantity * (_orderItems[index]['unit_price'] as double);
+      _markAsChanged();
+    });
+  }
+
+  void _removeItem(int index) {
+    setState(() {
+      _orderItems.removeAt(index);
+      _markAsChanged();
+    });
+  }
+
+  void _addNewItem() {
+    showDialog(
+      context: context,
+      builder: (context) => _AddOrderItemDialog(
+        availableProducts: _availableProducts,
+        onItemAdded: (item) {
+          setState(() {
+            _orderItems.add(item);
+            _markAsChanged();
+          });
+        },
+        supabase: widget.supabase,
+      ),
+    );
+  }
+
+  void _markAsChanged() {
+    if (!_hasChanges) {
+      setState(() {
+        _hasChanges = true;
+      });
+    }
+  }
+
+  Future<void> _saveChanges() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      // עדכון פרטי ההזמנה
+      await widget.supabase
+          .from('orders')
+          .update({
+            'notes': _notesController.text,
+            'total_amount': _totalAmount,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', widget.order['id']);
+
+      // מחיקת פריטי ההזמנה הקיימים
+      await widget.supabase
+          .from('order_items')
+          .delete()
+          .eq('order_id', widget.order['id']);
+
+      // הוספת פריטי ההזמנה המעודכנים
+      if (_orderItems.isNotEmpty) {
+        final itemsToInsert = _orderItems.map((item) => {
+          'order_id': widget.order['id'],
+          'product_id': item['products']['id'],
+          'size_id': item['product_sizes']?['id'],
+          'quantity': item['quantity'],
+          'unit_price': item['unit_price'],
+          'total_price': item['total_price'],
+        }).toList();
+
+        await widget.supabase
+            .from('order_items')
+            .insert(itemsToInsert);
+      }
+
+      widget.onOrderUpdated();
+      
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('השינויים נשמרו בהצלחה'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('שגיאה בשמירת השינויים: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 }
