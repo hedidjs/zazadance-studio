@@ -152,12 +152,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    color: const Color(0xFF2A2A2A),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     _formatNotificationData(notification['data']),
-                    style: const TextStyle(fontSize: 14),
+                    style: const TextStyle(fontSize: 14, color: Colors.white),
                   ),
                 ),
               ],
@@ -166,7 +166,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 'תאריך: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(notification['created_at']))}',
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Colors.grey,
+                  color: Colors.white54,
                 ),
               ),
             ],
