@@ -71,22 +71,19 @@
             font-size: 1.1em;
         }
         
-        .nav-links {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .nav-links a {
+        .back-button {
             color: #ffffff;
             text-decoration: none;
             padding: 10px 20px;
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
-        .nav-links a:hover {
+        .back-button:hover {
             background: rgba(233, 30, 99, 0.3);
             transform: translateY(-2px);
         }
@@ -195,6 +192,7 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
+            margin-top: 20px;
         }
         
         .contact-item {
@@ -215,6 +213,40 @@
             align-items: center;
             justify-content: center;
             font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .contact-details strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #00bcd4;
+        }
+        
+        .contact-details {
+            color: #e0e0e0;
+            line-height: 1.5;
+        }
+        
+        .contact-link {
+            color: #e91e63;
+            text-decoration: none;
+        }
+        
+        .contact-link:hover {
+            text-decoration: underline;
+        }
+        
+        .loading-skeleton {
+            background: rgba(255, 255, 255, 0.1);
+            height: 20px;
+            border-radius: 4px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
         
         .app-download {
@@ -259,6 +291,15 @@
             margin-top: 40px;
         }
         
+        .error-message {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            color: #ffcdd2;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
         @media (max-width: 768px) {
             .main-content {
                 grid-template-columns: 1fr;
@@ -274,8 +315,21 @@
                 font-size: 2em;
             }
             
-            .nav-links {
-                justify-content: center;
+            .container {
+                padding: 15px;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .contact-item {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .contact-icon {
+                margin-bottom: 10px;
             }
             
             .download-buttons {
@@ -283,7 +337,24 @@
                 align-items: center;
             }
         }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .card {
+                padding: 15px;
+            }
+            
+            .contact-item {
+                padding: 12px;
+            }
+        }
     </style>
+    
+    <!-- Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="container">
@@ -296,6 +367,10 @@
                         <p class="subtitle">ZaZa Dance Studio</p>
                     </div>
                 </div>
+                <a href="/" class="back-button">
+                    <span>←</span>
+                    חזור לעמוד הבית
+                </a>
             </div>
         </header>
 
@@ -332,7 +407,7 @@
             <div class="card">
                 <h2><span class="icon">📞</span>צור קשר</h2>
                 
-                <form class="contact-form" action="mailto:sharon.art6263@gmail.com" method="post" enctype="text/plain">
+                <form class="contact-form" id="contactForm">
                     <div class="form-group">
                         <label for="name">שם מלא *</label>
                         <input type="text" id="name" name="name" required placeholder="הכנס את שמך המלא">
@@ -344,10 +419,18 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="category">סוג הפניה</label>
-                        <select id="category" name="category">
+                        <label for="phone">טלפון</label>
+                        <input type="tel" id="phone" name="phone" placeholder="050-1234567">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="subject">נושא *</label>
+                        <select id="subject" name="subject" required>
+                            <option value="">בחר נושא</option>
                             <option value="technical">בעיה טכנית</option>
                             <option value="account">בעיית התחברות והרשמה</option>
+                            <option value="billing">שאלות תשלום</option>
+                            <option value="content">תוכן ומדריכים</option>
                             <option value="general">שאלות כלליות</option>
                             <option value="other">אחר</option>
                         </select>
@@ -361,27 +444,36 @@
                     <button type="submit" class="submit-btn">📤 שלח הודעה</button>
                 </form>
                 
-                <div class="contact-info">
-                    <div class="contact-item">
-                        <div class="contact-icon">📧</div>
-                        <div>
-                            <strong>אימייל</strong><br>
-                            sharon.art6263@gmail.com
-                        </div>
-                    </div>
-                    
+                <div class="contact-info" id="contactInfo">
+                    <!-- Contact details will be loaded dynamically -->
                     <div class="contact-item">
                         <div class="contact-icon">⏰</div>
-                        <div>
-                            <strong>זמני מענה</strong><br>
-                            א'-ה' 09:00-17:00<br>
-                            מענה תוך 24 שעות
-                        </div>
+                        <div class="loading-skeleton"></div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <div class="app-download">
+            <h2>🎯 רוצים חוויה מלאה?</h2>
+            <p>הורידו את האפליקציה הרשמית של ZaZa Dance Studio</p>
+            <div class="download-buttons">
+                <a href="#" class="download-btn">
+                    <span>📱</span>
+                    <div>
+                        <div>הורדה מ-App Store</div>
+                        <small>iOS</small>
+                    </div>
+                </a>
+                <a href="#" class="download-btn">
+                    <span>🤖</span>
+                    <div>
+                        <div>הורדה מ-Google Play</div>
+                        <small>Android</small>
+                    </div>
+                </a>
+            </div>
+        </div>
 
         <footer>
             <p>&copy; 2024 ZaZa Dance Studio. כל הזכויות שמורות.</p>
@@ -390,21 +482,197 @@
     </div>
 
     <script>
-        // Add some interactivity
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.querySelector('.contact-form');
-            const submitBtn = document.querySelector('.submit-btn');
-            
-            form.addEventListener('submit', function(e) {
-                submitBtn.innerHTML = '📤 שולח...';
-                submitBtn.disabled = true;
+        // Supabase configuration
+        const supabaseUrl = 'https://evdqnpflexjwjdxixdqm.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2ZHFucGZsZXhqd2pkeGl4ZHFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjU2MzQ4OTQsImV4cCI6MjA0MTIxMDg5NH0.R4lF4Ojs_cBRZGV2WVVhNvtBHVdORkA1Mh-aKW5mKOc';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // Load contact information
+        async function loadContactInfo() {
+            try {
+                const { data, error } = await supabase
+                    .from('contact_info')
+                    .select('*')
+                    .single();
                 
-                // Re-enable button after a delay (for demo purposes)
-                setTimeout(() => {
-                    submitBtn.innerHTML = '📤 שלח הודעה';
-                    submitBtn.disabled = false;
-                }, 2000);
-            });
+                if (error) {
+                    console.error('Error loading contact info:', error);
+                    showDefaultContactInfo();
+                    return;
+                }
+                
+                displayContactInfo(data);
+            } catch (error) {
+                console.error('Error:', error);
+                showDefaultContactInfo();
+            }
+        }
+        
+        function displayContactInfo(contactData) {
+            const contactInfoDiv = document.getElementById('contactInfo');
+            let contactHTML = '';
+            
+            // Email
+            if (contactData.email) {
+                contactHTML += `
+                    <div class="contact-item">
+                        <div class="contact-icon">📧</div>
+                        <div class="contact-details">
+                            <strong>אימייל</strong>
+                            <a href="mailto:${contactData.email}" class="contact-link">${contactData.email}</a>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Phone
+            if (contactData.phone) {
+                contactHTML += `
+                    <div class="contact-item">
+                        <div class="contact-icon">📞</div>
+                        <div class="contact-details">
+                            <strong>טלפון</strong>
+                            <a href="tel:${contactData.phone}" class="contact-link">${contactData.phone}</a>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // WhatsApp
+            if (contactData.whatsapp) {
+                contactHTML += `
+                    <div class="contact-item">
+                        <div class="contact-icon">💬</div>
+                        <div class="contact-details">
+                            <strong>WhatsApp</strong>
+                            <a href="https://wa.me/${contactData.whatsapp.replace(/[^0-9]/g, '')}" target="_blank" class="contact-link">${contactData.whatsapp}</a>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Address
+            if (contactData.address) {
+                contactHTML += `
+                    <div class="contact-item">
+                        <div class="contact-icon">📍</div>
+                        <div class="contact-details">
+                            <strong>כתובת</strong>
+                            ${contactData.address}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Working Hours
+            if (contactData.working_hours) {
+                contactHTML += `
+                    <div class="contact-item">
+                        <div class="contact-icon">⏰</div>
+                        <div class="contact-details">
+                            <strong>שעות פעילות</strong>
+                            ${contactData.working_hours}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Instagram
+            if (contactData.instagram) {
+                contactHTML += `
+                    <div class="contact-item">
+                        <div class="contact-icon">📸</div>
+                        <div class="contact-details">
+                            <strong>אינסטגרם</strong>
+                            <a href="https://instagram.com/${contactData.instagram}" target="_blank" class="contact-link">@${contactData.instagram}</a>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            contactInfoDiv.innerHTML = contactHTML;
+        }
+        
+        function showDefaultContactInfo() {
+            const contactInfoDiv = document.getElementById('contactInfo');
+            contactInfoDiv.innerHTML = `
+                <div class="error-message">
+                    <strong>שגיאה בטעינת פרטי יצירת קשר</strong><br>
+                    נסה לרענן את הדף או צור קשר ישירות באמצעות הטופס למעלה.
+                </div>
+                <div class="contact-item">
+                    <div class="contact-icon">📧</div>
+                    <div class="contact-details">
+                        <strong>אימייל (ברירת מחדל)</strong>
+                        <a href="mailto:sharon.art6263@gmail.com" class="contact-link">sharon.art6263@gmail.com</a>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-icon">⏰</div>
+                    <div class="contact-details">
+                        <strong>זמני מענה</strong>
+                        א'-ה' 09:00-17:00<br>
+                        מענה תוך 24 שעות
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Handle form submission
+        async function handleFormSubmission(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.querySelector('.submit-btn');
+            const originalText = submitBtn.innerHTML;
+            
+            // Show loading state
+            submitBtn.innerHTML = '📤 שולח...';
+            submitBtn.disabled = true;
+            
+            // Get form data
+            const formData = new FormData(event.target);
+            const messageData = {
+                name: formData.get('name'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                subject: formData.get('subject'),
+                message: formData.get('message'),
+                status: 'new',
+                created_at: new Date().toISOString()
+            };
+            
+            try {
+                // Save to database
+                const { error } = await supabase
+                    .from('contact_messages')
+                    .insert([messageData]);
+                
+                if (error) {
+                    throw error;
+                }
+                
+                // Success
+                alert('ההודעה נשלחה בהצלחה! נחזור אליך בהקדם האפשרי.');
+                event.target.reset();
+                
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('אירעה שגיאה בשליחת ההודעה. אנא נסה שוב או צור קשר ישירות.');
+            } finally {
+                // Restore button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load contact information
+            loadContactInfo();
+            
+            // Setup form submission
+            const contactForm = document.getElementById('contactForm');
+            contactForm.addEventListener('submit', handleFormSubmission);
             
             // Add smooth scroll for internal links
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
