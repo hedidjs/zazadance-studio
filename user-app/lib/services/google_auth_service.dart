@@ -18,7 +18,7 @@ class GoogleAuthService {
         // iOS will use CLIENT_ID from GoogleService-Info.plist
         // Android will use client_id from google-services.json
         // Web client ID is specified via serverClientId for Supabase token validation
-        // Remove serverClientId to use platform-specific settings only
+        serverClientId: '409450161677-39sdbh03i11gvgljhdvbcf930cfovqeq.apps.googleusercontent.com',
         scopes: ['email', 'profile'], // Basic scopes for authentication
       );
       debugPrint('GoogleSignIn initialized successfully');
