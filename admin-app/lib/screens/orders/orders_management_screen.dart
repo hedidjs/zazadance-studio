@@ -342,50 +342,46 @@ class _OrdersManagementScreenState extends State<OrdersManagementScreen> {
             ),
           ],
         ),
-        trailing: SizedBox(
-          width: 150,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.edit, color: Color(0xFF00BCD4), size: 24),
-                onPressed: () {
-                  print('Edit button pressed for order: ${order['order_number']}');
-                  _editOrder(order);
-                },
-                tooltip: 'ערוך הזמנה',
-                padding: const EdgeInsets.all(8),
-                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red, size: 24),
-                onPressed: () {
-                  print('Delete button pressed for order: ${order['order_number']}');
-                  _deleteOrder(order['id'], order['order_number']);
-                },
-                tooltip: 'מחק הזמנה',
-                padding: const EdgeInsets.all(8),
-                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              ),
-              PopupMenuButton<String>(
-                color: const Color(0xFF2A2A2A),
-                onSelected: (value) => _updateOrderStatus(order['id'], value),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                itemBuilder: (context) => _statusOptions
-                    .where((status) => status['value'] != 'all' && status['value'] != order['status'])
-                    .map((status) => PopupMenuItem<String>(
-                          value: status['value'],
-                          child: Text(
-                            'שנה ל${status['label']}',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ))
-                    .toList(),
-              ),
-            ],
-          ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit, color: Color(0xFF00BCD4), size: 24),
+              onPressed: () {
+                print('Edit button pressed for order: ${order['order_number']}');
+                _editOrder(order);
+              },
+              tooltip: 'ערוך הזמנה',
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red, size: 24),
+              onPressed: () {
+                print('Delete button pressed for order: ${order['order_number']}');
+                _deleteOrder(order['id'], order['order_number']);
+              },
+              tooltip: 'מחק הזמנה',
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            ),
+            PopupMenuButton<String>(
+              color: const Color(0xFF2A2A2A),
+              onSelected: (value) => _updateOrderStatus(order['id'], value),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              itemBuilder: (context) => _statusOptions
+                  .where((status) => status['value'] != 'all' && status['value'] != order['status'])
+                  .map((status) => PopupMenuItem<String>(
+                        value: status['value'],
+                        child: Text(
+                          'שנה ל${status['label']}',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ],
         ),
         children: [
           Container(
