@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/app_logo.dart';
 
 class AdminLayout extends ConsumerWidget {
@@ -672,32 +673,7 @@ class AdminLayout extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // הודעות
-                IconButton(
-                  icon: Stack(
-                    children: [
-                      Icon(
-                        Icons.notifications_outlined,
-                        color: Colors.white70,
-                        size: isMobile ? 20 : 24,
-                      ),
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFE91E63),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  onPressed: () {
-                    context.go('/notifications');
-                  },
-                ),
+                _buildNotificationButton(isMobile),
                 
                 if (!isMobile) const SizedBox(width: 8),
                 
@@ -749,6 +725,64 @@ class AdminLayout extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildNotificationButton(bool isMobile) {
+    final supabase = Supabase.instance.client;
+    
+    return StreamBuilder<int>(
+      stream: _getUnreadNotificationsCountStream(supabase),
+      builder: (context, snapshot) {
+        final unreadCount = snapshot.data ?? 0;
+        
+        return IconButton(
+          icon: Stack(
+            children: [
+              Icon(
+                Icons.notifications_outlined,
+                color: Colors.white70,
+                size: isMobile ? 20 : 24,
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 16),
+                    height: 16,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE91E63),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text(
+                        unreadCount > 99 ? '99+' : unreadCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          onPressed: () {
+            context.go('/notifications');
+          },
+        );
+      },
+    );
+  }
+
+  Stream<int> _getUnreadNotificationsCountStream(SupabaseClient supabase) {
+    return supabase
+        .from('admin_notifications')
+        .stream(primaryKey: ['id'])
+        .eq('is_read', false)
+        .map((data) => data.length);
   }
 
   String _getPageTitle(String location) {

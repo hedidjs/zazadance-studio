@@ -215,6 +215,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Colors.blue;
       case 'new_order':
         return Colors.orange;
+      case 'user_deleted':
+        return Colors.red;
       default:
         return Colors.grey;
     }
@@ -230,6 +232,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Icons.message;
       case 'new_order':
         return Icons.shopping_cart;
+      case 'user_deleted':
+        return Icons.person_remove;
       default:
         return Icons.notifications;
     }
@@ -245,6 +249,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return 'הודעת קשר';
       case 'new_order':
         return 'הזמנה חדשה';
+      case 'user_deleted':
+        return 'משתמש נמחק';
       default:
         return 'התראה';
     }
@@ -349,7 +355,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         elevation: isUnread ? 4 : 2,
-                        color: isUnread ? Colors.blue[50] : null,
+                        color: isUnread ? const Color(0xFF2A2A2A) : const Color(0xFF1A1A1A),
                         child: ListTile(
                           leading: CircleAvatar(
                             backgroundColor: _getNotificationTypeColor(notification['notification_type']),
@@ -377,6 +383,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   notification['title'],
                                   style: TextStyle(
                                     fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ),
@@ -389,6 +396,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 notification['message'],
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: Colors.white70),
                               ),
                               const SizedBox(height: 4),
                               Row(
@@ -418,7 +426,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     ),
                                     style: const TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey,
+                                      color: Colors.white54,
                                     ),
                                   ),
                                 ],
