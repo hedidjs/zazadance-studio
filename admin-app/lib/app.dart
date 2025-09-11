@@ -14,6 +14,7 @@ import 'screens/general/general_management_screen.dart';
 import 'screens/theme/theme_management_screen.dart';
 import 'screens/groups/groups_management_screen.dart';
 import 'screens/welcome/welcome_messages_management_screen.dart';
+import 'screens/notifications/notifications_screen.dart';
 import 'shared/layouts/admin_layout.dart';
 
 class AdminRouter {
@@ -107,6 +108,12 @@ class AdminRouter {
           GoRoute(
             path: '/contact-messages',
             builder: (context, state) => const ContactMessagesScreen(),
+          ),
+          
+          // התראות
+          GoRoute(
+            path: '/notifications',
+            builder: (context, state) => const NotificationsScreen(),
           ),
           
           // ניהול כללי

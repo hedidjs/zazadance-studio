@@ -280,6 +280,16 @@ class AdminLayout extends ConsumerWidget {
                   path: '/contact-messages',
                   isActive: currentLocation == '/contact-messages',
                 ),
+                
+                // התראות
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.notifications_outlined,
+                  activeIcon: Icons.notifications,
+                  title: 'התראות',
+                  path: '/notifications',
+                  isActive: currentLocation == '/notifications',
+                ),
               ],
             ),
           ),
@@ -570,6 +580,14 @@ class AdminLayout extends ConsumerWidget {
                   path: '/contact-messages',
                   isActive: currentLocation == '/contact-messages',
                 ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.notifications_outlined,
+                  activeIcon: Icons.notifications,
+                  title: 'התראות',
+                  path: '/notifications',
+                  isActive: currentLocation == '/notifications',
+                ),
               ],
             ),
           ),
@@ -677,7 +695,7 @@ class AdminLayout extends ConsumerWidget {
                     ],
                   ),
                   onPressed: () {
-                    // TODO: הצגת הודעות
+                    context.go('/notifications');
                   },
                 ),
                 
@@ -763,6 +781,8 @@ class AdminLayout extends ConsumerWidget {
         return 'ניהול יצירת קשר';
       case '/contact-messages':
         return 'הודעות יצירת קשר';
+      case '/notifications':
+        return 'התראות';
       default:
         return 'פאנל ניהול';
     }
@@ -796,6 +816,8 @@ class AdminLayout extends ConsumerWidget {
         return 'עריכת פרטי יצירת קשר';
       case '/contact-messages':
         return 'צפייה וניהול הודעות מלקוחות';
+      case '/notifications':
+        return 'התראות מערכת בזמן אמת';
       default:
         return 'ZaZa Dance';
     }
