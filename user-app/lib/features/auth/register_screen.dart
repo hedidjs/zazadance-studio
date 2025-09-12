@@ -98,11 +98,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
 
     try {
+      final username = _usernameController.text.trim().toLowerCase();
+      final dummyEmail = '${username}@zazadance.studio';
+
       // בדיקה אם שם המשתמש כבר קיים
       final existingUser = await _supabase
           .from('users')
           .select('username')
-          .eq('username', _usernameController.text.trim())
+          .eq('username', username)
           .maybeSingle();
 
       if (existingUser != null) {
@@ -110,15 +113,24 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         return;
       }
 
-      // יצירת אימייל dummy בעבור Supabase Auth
-      final dummyEmail = '${_usernameController.text.trim()}@zazadance.studio';
+      // בדיקה אם האימייל הדמה כבר קיים ב-auth
+      final existingAuth = await _supabase
+          .from('users')
+          .select('email')
+          .eq('email', dummyEmail)
+          .maybeSingle();
+
+      if (existingAuth != null) {
+        _showErrorSnackBar('שם המשתמש כבר קיים במערכת');
+        return;
+      }
       
       final response = await _supabase.auth.signUp(
         email: dummyEmail,
         password: _passwordController.text,
         data: {
           'full_name': _fullNameController.text.trim(),
-          'username': _usernameController.text.trim(),
+          'username': username,
         },
       );
 
@@ -129,8 +141,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         // יצירת רשומה בטבלת users עם מערכת האישור
         await _supabase.from('users').insert({
           'id': response.user!.id,
-          'username': _usernameController.text.trim(),
+          'username': username,
           'email': dummyEmail,
+          'display_name': _fullNameController.text.trim(),
           'full_name': _fullNameController.text.trim(),
           'phone': _phoneController.text.trim(),
           'address': _addressController.text.trim(),
@@ -139,13 +152,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           'student_name': _selectedUserType == 'parent' ? _relatedNameController.text.trim() : null,
           'profile_image_url': profileImageUrl,
           'avatar_url': profileImageUrl,
-          'role': _selectedUserType!,
-          'is_approved': false, // ממתין לאישור
+          'role': 'student', // התחל עם role בסיסי
+          'is_approved': false,
           'approval_status': 'pending',
-          'requested_at': DateTime.now().toIso8601String(),
-          'is_active': false, // לא פעיל עד לאישור
-          'created_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
+          'is_active': false,
         });
 
         // התנתקות מהמשתמש כיון שהוא עדיין לא מאושר
