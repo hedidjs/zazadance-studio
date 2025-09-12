@@ -17,7 +17,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _supabase = Supabase.instance.client;
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
-  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _fullNameController = TextEditingController();
@@ -35,7 +34,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   void dispose() {
     _usernameController.dispose();
-    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _fullNameController.dispose();
@@ -112,8 +110,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         return;
       }
 
+      // יצירת אימייל dummy בעבור Supabase Auth
+      final dummyEmail = '${_usernameController.text.trim()}@zazadance.studio';
+      
       final response = await _supabase.auth.signUp(
-        email: _emailController.text.trim(),
+        email: dummyEmail,
         password: _passwordController.text,
         data: {
           'full_name': _fullNameController.text.trim(),
@@ -129,7 +130,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         await _supabase.from('users').insert({
           'id': response.user!.id,
           'username': _usernameController.text.trim(),
-          'email': response.user!.email!,
+          'email': dummyEmail,
           'full_name': _fullNameController.text.trim(),
           'phone': _phoneController.text.trim(),
           'address': _addressController.text.trim(),
@@ -702,33 +703,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       }
                       if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value.trim())) {
                         return 'שם המשתמש יכול להכיל אותיות, ספרות ו_ בלבד';
-                      }
-                      return null;
-                    },
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // שדה אימייל
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: 'אימייל',
-                      prefixIcon: const Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFF1E1E1E),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'אנא הזן אימייל';
-                      }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                        return 'אנא הזן אימייל תקין';
                       }
                       return null;
                     },

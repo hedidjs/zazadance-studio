@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/app_config_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/auth_notifier.dart';
-import '../../services/google_auth_service.dart';
 
 class MainScaffold extends ConsumerStatefulWidget {
   final Widget child;
@@ -480,7 +479,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
               Navigator.pop(context);
               try {
                 // התנתקות מGoogle Sign-In ומSupabase
-                await GoogleAuthService().signOut();
+                // התנתקות מהמערכת
                 
                 // ניווט לעמוד ההתחברות וניקוי כל ההיסטוריה
                 if (context.mounted) {

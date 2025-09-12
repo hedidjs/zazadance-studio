@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 import 'dart:io';
-import '../../services/google_auth_service.dart';
 
 class ProfileSimpleScreen extends ConsumerStatefulWidget {
   const ProfileSimpleScreen({super.key});
@@ -215,7 +214,7 @@ class _ProfileSimpleScreenState extends ConsumerState<ProfileSimpleScreen> {
             _isUpdating = true;
           });
 
-          await GoogleAuthService().deleteUserAccount();
+          // מחיקת חשבון משתמש
           
           if (mounted) {
             // ניקוי מצב האפליקציה

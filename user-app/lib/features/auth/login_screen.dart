@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/app_config_provider.dart';
-import '../../services/google_auth_service.dart';
 import '../terms/terms_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -15,13 +14,11 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderStateMixin {
   final _supabase = Supabase.instance.client;
-  final _googleAuth = GoogleAuthService();
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   
   bool _isLoading = false;
-  bool _isGoogleLoading = false;
   bool _obscurePassword = true;
   
   late AnimationController _shimmerController;
@@ -111,31 +108,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     }
   }
 
-  Future<void> _signInWithGoogle() async {
-    setState(() {
-      _isGoogleLoading = true;
-    });
-
-    try {
-      final response = await _googleAuth.signInWithGoogle();
-      
-      if (response?.user != null && mounted) {
-        context.go('/');
-      } else if (mounted) {
-        _showErrorSnackBar('התחברות בוטלה או נכשלה');
-      }
-    } catch (error) {
-      if (mounted) {
-        _showErrorSnackBar('שגיאה בהתחברות דרך Google: $error');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isGoogleLoading = false;
-        });
-      }
-    }
-  }
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -489,7 +461,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: (_isLoading || _isGoogleLoading) ? null : _signIn,
+                      onPressed: _isLoading ? null : _signIn,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFE91E63),
                         foregroundColor: Colors.white,
@@ -552,89 +524,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                     ),
                   ),
                   
-                  const SizedBox(height: 16),
-                  
-                  // מפריד "או"
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 1,
-                          color: Colors.white.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'או',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          height: 1,
-                          color: Colors.white.withValues(alpha: 0.3),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // כפתור Google Sign-In
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: (_isLoading || _isGoogleLoading) ? null : _signInWithGoogle,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            width: 1,
-                          ),
-                        ),
-                        elevation: 2,
-                      ),
-                      icon: _isGoogleLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : Image.network(
-                              'https://developers.google.com/identity/images/g-logo.png',
-                              width: 20,
-                              height: 20,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(
-                                  Icons.login,
-                                  color: Colors.white,
-                                  size: 20,
-                                );
-                              },
-                            ),
-                      label: Text(
-                        _isGoogleLoading ? 'מתחבר...' : 'התחבר עם Google',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 32),
                   
                   // כפתור הרשמה
                   TextButton(

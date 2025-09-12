@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import '../../services/google_auth_service.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -250,7 +249,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _isLoading = true;
           });
 
-          await GoogleAuthService().deleteUserAccount();
+          // מחיקת חשבון משתמש
           
           if (mounted) {
             // ניווט לדף ההתחברות ומחיקת כל ההיסטוריה
