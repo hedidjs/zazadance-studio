@@ -256,11 +256,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               
               const SizedBox(height: 24),
               
-              // קישורים משפטיים
-              _buildLegalLinksSection(),
-              
-              const SizedBox(height: 24),
-              
               const SizedBox(height: 100), // מקום לbottom navigation
             ],
           ),

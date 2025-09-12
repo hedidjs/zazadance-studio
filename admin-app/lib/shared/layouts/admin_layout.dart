@@ -242,6 +242,16 @@ class AdminLayout extends ConsumerWidget {
                   isActive: currentLocation == '/users',
                 ),
                 
+                // בקשות הרשמה
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.person_add_outlined,
+                  activeIcon: Icons.person_add,
+                  title: 'בקשות הרשמה',
+                  path: '/user-requests',
+                  isActive: currentLocation == '/user-requests',
+                ),
+                
                 // ניהול אודות הסטודיו
                 _buildNavItem(
                   context: context,
@@ -551,6 +561,14 @@ class AdminLayout extends ConsumerWidget {
                 ),
                 _buildNavItem(
                   context: context,
+                  icon: Icons.person_add_outlined,
+                  activeIcon: Icons.person_add,
+                  title: 'בקשות הרשמה',
+                  path: '/user-requests',
+                  isActive: currentLocation == '/user-requests',
+                ),
+                _buildNavItem(
+                  context: context,
                   icon: Icons.info_outline,
                   activeIcon: Icons.info,
                   title: 'אודות הסטודיו',
@@ -807,6 +825,8 @@ class AdminLayout extends ConsumerWidget {
         return 'עיצוב האפליקציה';
       case '/users':
         return 'ניהול משתמשים';
+      case '/user-requests':
+        return 'בקשות הרשמה';
       case '/about':
         return 'ניהול אודות הסטודיו';
       case '/terms':
@@ -842,6 +862,8 @@ class AdminLayout extends ConsumerWidget {
         return 'הגדרות כלליות של האפליקציה';
       case '/users':
         return 'ניהול תלמידים והורים';
+      case '/user-requests':
+        return 'אישור בקשות הרשמה חדשות';
       case '/about':
         return 'עריכת תוכן אודות הסטודיו';
       case '/terms':

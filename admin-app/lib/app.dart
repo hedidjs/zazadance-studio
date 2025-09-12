@@ -10,6 +10,7 @@ import 'screens/about/about_management_screen.dart';
 import 'screens/terms/terms_management_screen.dart';
 import 'screens/contact/contact_management_screen.dart';
 import 'screens/contact/contact_messages_screen.dart';
+import 'screens/users/user_requests_screen.dart';
 import 'screens/general/general_management_screen.dart';
 import 'screens/theme/theme_management_screen.dart';
 import 'screens/groups/groups_management_screen.dart';
@@ -84,6 +85,12 @@ class AdminRouter {
           GoRoute(
             path: '/users',
             builder: (context, state) => const UsersManagementScreen(),
+          ),
+          
+          // בקשות הרשמה משתמשים
+          GoRoute(
+            path: '/user-requests',
+            builder: (context, state) => const UserRequestsScreen(),
           ),
           
           // ניהול תוכן אודות הסטודיו

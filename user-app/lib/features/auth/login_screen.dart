@@ -17,7 +17,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
   final _supabase = Supabase.instance.client;
   final _googleAuth = GoogleAuthService();
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   
   bool _isLoading = false;
@@ -48,7 +48,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     _shimmerController.dispose();
     super.dispose();
@@ -62,8 +62,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     });
 
     try {
+      // חיפוש האימייל לפי שם המשתמש
+      final userQuery = await _supabase
+          .from('users')
+          .select('email, is_approved')
+          .eq('username', _usernameController.text.trim())
+          .maybeSingle();
+
+      if (userQuery == null) {
+        if (mounted) {
+          _showErrorSnackBar('שם משתמש לא נמצא');
+        }
+        return;
+      }
+
+      // בדיקה אם המשתמש מאושר
+      if (userQuery['is_approved'] != true) {
+        if (mounted) {
+          _showErrorSnackBar('המשתמש שלך עדיין ממתין לאישור מנהל');
+        }
+        return;
+      }
+
+      final email = userQuery['email'] as String;
+
       final response = await _supabase.auth.signInWithPassword(
-        email: _emailController.text.trim(),
+        email: email,
         password: _passwordController.text,
       );
 
@@ -396,14 +420,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                   
                   const SizedBox(height: 48),
                   
-                  // שדה אימייל
+                  // שדה שם משתמש
                   TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
+                    controller: _usernameController,
+                    keyboardType: TextInputType.text,
                     textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
-                      labelText: 'אימייל',
-                      prefixIcon: const Icon(Icons.email_outlined),
+                      labelText: 'שם משתמש',
+                      prefixIcon: const Icon(Icons.person_outlined),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -412,10 +436,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'אנא הזן אימייל';
+                        return 'אנא הזן שם משתמש';
                       }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                        return 'אנא הזן אימייל תקין';
+                      if (value.trim().length < 3) {
+                        return 'שם המשתמש צריך להכיל לפחות 3 תווים';
                       }
                       return null;
                     },
@@ -491,6 +515,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // הודעה על אפליקציה פרטית
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00BCD4).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFF00BCD4).withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.lock_outlined,
+                          color: Color(0xFF00BCD4),
+                          size: 16,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'אפליקציה פרטית לסטודיו',
+                          style: TextStyle(
+                            color: Color(0xFF00BCD4),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   
