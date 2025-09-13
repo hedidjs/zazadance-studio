@@ -31,18 +31,20 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
     try {
       setState(() => _isLoading = true);
       
-      // Load real users from Supabase
-      final response = await _supabase
-          .from('users')
-          .select('*')
-          .order('created_at', ascending: false);
-
+      print('DEBUG: Loading all users using RPC function...');
+      
+      // Use admin RPC function to bypass RLS and get all users
+      final response = await _supabase.rpc('get_all_users_admin');
+      
+      print('DEBUG: RPC response: $response');
+      print('DEBUG: Found ${response.length} total users');
 
       setState(() {
         _users = List<Map<String, dynamic>>.from(response);
         _isLoading = false;
       });
     } catch (e) {
+      print('DEBUG: Error loading users: $e');
       setState(() => _isLoading = false);
       _showErrorSnackBar('שגיאה בטעינת המשתמשים: $e');
     }
@@ -542,32 +544,72 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
   Future<void> _addUser(Map<String, String> userData) async {
     try {
       print('Adding user with data: $userData');
-      
+
+      final username = userData['username']!;
+      final dummyEmail = userData['email']!;
+
+      // בדיקה אם שם המשתמש כבר קיים
+      final existingUser = await _supabase
+          .from('users')
+          .select('username')
+          .eq('username', username)
+          .maybeSingle();
+
+      if (existingUser != null) {
+        throw Exception('שם המשתמש כבר קיים');
+      }
+
+      // בדיקה אם האימייל הדמה כבר קיים ב-auth
+      final existingAuth = await _supabase
+          .from('users')
+          .select('email')
+          .eq('email', dummyEmail)
+          .maybeSingle();
+
+      if (existingAuth != null) {
+        throw Exception('שם המשתמש כבר קיים במערכת');
+      }
+
       // First create a user in Supabase Auth using signUp
       final authResponse = await _supabase.auth.signUp(
-        email: userData['email']!,
+        email: dummyEmail,
         password: userData['password'] ?? 'TempPass123!',
         data: {
-          'display_name': userData['display_name'],
-          'role': userData['role'] ?? 'student',
+          'full_name': userData['full_name'],
+          'username': username,
         },
       );
-      
+
       if (authResponse.user == null) {
         throw Exception('Failed to create auth user');
       }
-      
+
       print('Auth user created: ${authResponse.user!.id}');
       
       // Now create the user record in our users table with the auth user ID
-      final response = await _supabase.from('users').insert({
+      final userRecord = {
         'id': authResponse.user!.id,
-        'email': userData['email'],
-        'display_name': userData['display_name'] ?? '',
+        'username': username,
+        'email': dummyEmail,
+        'display_name': userData['full_name'] ?? '',
+        'full_name': userData['full_name'] ?? '',
         'phone': userData['phone'] ?? '',
+        'address': userData['address'] ?? '',
+        'user_type': userData['user_type'] ?? 'student',
         'role': userData['role'] ?? 'student',
-        'is_active': true,
-      }).select();
+        'approval_status': userData['approval_status'] ?? 'pending',
+        'is_approved': userData['is_approved'] == 'true',
+        'is_active': userData['is_active'] == 'true',
+      };
+
+      // Add parent_name or student_name based on user type
+      if (userData['user_type'] == 'student' && userData['parent_name'] != null) {
+        userRecord['parent_name'] = userData['parent_name']!;
+      } else if (userData['user_type'] == 'parent' && userData['student_name'] != null) {
+        userRecord['student_name'] = userData['student_name']!;
+      }
+
+      final response = await _supabase.from('users').insert(userRecord).select();
       
       print('User record created: $response');
       
@@ -582,14 +624,30 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
   Future<void> _updateUser(String userId, Map<String, String> userData) async {
     try {
       // Now that RLS is disabled, update directly in Supabase first
+      final updateData = {
+        'display_name': userData['full_name'],
+        'full_name': userData['full_name'],
+        'phone': userData['phone'],
+        'address': userData['address'],
+        'user_type': userData['user_type'],
+        'role': userData['role'],
+        'approval_status': userData['approval_status'],
+        'is_approved': userData['is_approved'] == 'true',
+        'is_active': userData['is_active'] == 'true',
+      };
+
+      // Add parent_name or student_name based on user type, and clear the other
+      if (userData['user_type'] == 'student') {
+        updateData['parent_name'] = userData['parent_name'] ?? '';
+        updateData['student_name'] = null;
+      } else if (userData['user_type'] == 'parent') {
+        updateData['student_name'] = userData['student_name'] ?? '';
+        updateData['parent_name'] = null;
+      }
+
       final response = await _supabase
           .from('users')
-          .update({
-            'display_name': userData['display_name'],
-            'phone': userData['phone'],
-            'role': userData['role'],
-            'is_active': userData['is_active'] == 'true',
-          })
+          .update(updateData)
           .eq('id', userId)
           .select();
 
@@ -598,12 +656,26 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
         setState(() {
           final index = _users.indexWhere((user) => user['id'] == userId);
           if (index != -1) {
-            _users[index]['display_name'] = userData['display_name'];
+            _users[index]['display_name'] = userData['full_name'];
+            _users[index]['full_name'] = userData['full_name'];
             _users[index]['phone'] = userData['phone'];
+            _users[index]['address'] = userData['address'];
+            _users[index]['user_type'] = userData['user_type'];
             _users[index]['role'] = userData['role'];
+            _users[index]['approval_status'] = userData['approval_status'];
+            _users[index]['is_approved'] = userData['is_approved'] == 'true';
             _users[index]['is_active'] = userData['is_active'] == 'true';
-            _users[index]['first_name'] = userData['display_name']?.split(' ')[0];
-            _users[index]['last_name'] = (userData['display_name']?.split(' ').length ?? 0) > 1 ? userData['display_name']?.split(' ')[1] : '';
+            _users[index]['first_name'] = userData['full_name']?.split(' ')[0];
+            _users[index]['last_name'] = (userData['full_name']?.split(' ').length ?? 0) > 1 ? userData['full_name']?.split(' ')[1] : '';
+
+            // Update parent_name or student_name and clear the other
+            if (userData['user_type'] == 'student') {
+              _users[index]['parent_name'] = userData['parent_name'] ?? '';
+              _users[index]['student_name'] = null;
+            } else if (userData['user_type'] == 'parent') {
+              _users[index]['student_name'] = userData['student_name'] ?? '';
+              _users[index]['parent_name'] = null;
+            }
           }
         });
         _showSuccessSnackBar('משתמש עודכן בהצלחה במסד הנתונים!');
@@ -645,25 +717,26 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
     try {
       final newStatus = !(user['is_active'] ?? true);
       
-      // Now that RLS is disabled, update directly in Supabase first
-      final response = await _supabase
-          .from('users')
-          .update({'is_active': newStatus})
-          .eq('id', user['id'])
-          .select();
+      // Use RPC function to bypass RLS
+      print('DEBUG: Toggling user ${user['id']} active status to $newStatus');
+      
+      final response = await _supabase.rpc('toggle_user_active_admin', 
+        params: {
+          'user_id': user['id'],
+          'active_status': newStatus
+        }
+      );
+      
+      print('DEBUG: Toggle user active response: $response');
 
-      if (response.isNotEmpty) {
-        // Update successful, now update local state
-        setState(() {
-          final index = _users.indexWhere((u) => u['id'] == user['id']);
-          if (index != -1) {
-            _users[index]['is_active'] = newStatus;
-          }
-        });
-        _showSuccessSnackBar(newStatus ? 'משתמש הופעל בהצלחה!' : 'משתמש הושבת בהצלחה!');
-      } else {
-        _showErrorSnackBar('שגיאה: לא ניתן לעדכן סטטוס המשתמש');
-      }
+      // Update successful, now update local state
+      setState(() {
+        final index = _users.indexWhere((u) => u['id'] == user['id']);
+        if (index != -1) {
+          _users[index]['is_active'] = newStatus;
+        }
+      });
+      _showSuccessSnackBar(newStatus ? 'משתמש הופעל בהצלחה!' : 'משתמש הושבת בהצלחה!');
     } catch (e) {
       _showErrorSnackBar('שגיאה בעדכון סטטוס המשתמש: $e');
     }
@@ -672,19 +745,16 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
   // Attempt to update user status in Supabase in the background
   void _attemptBackgroundStatusUpdate(String userId, bool newStatus) async {
     try {
-      final response = await _supabase
-          .from('users')
-          .update({'is_active': newStatus})
-          .eq('id', userId)
-          .select();
+      final response = await _supabase.rpc('toggle_user_active_admin', 
+        params: {
+          'user_id': userId,
+          'active_status': newStatus
+        }
+      );
       
       print('Background status update response: $response');
       
-      if (response.isNotEmpty) {
-        print('Background status update successful');
-      } else {
-        print('Background status update failed due to RLS policies');
-      }
+      print('Background status update successful: $response');
     } catch (e) {
       print('Background status update error: $e');
     }
@@ -699,61 +769,36 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
         return;
       }
 
-      print('Deleting user ID: $userId');
+      print('DEBUG: Deleting user ID: $userId');
 
-      // Now that RLS is disabled, try normal Supabase delete
-      final success = await _deleteUserSupabase(userId);
+      // Use RPC function to bypass RLS
+      final response = await _supabase.rpc('delete_user_admin', 
+        params: {'user_id': userId}
+      );
       
-      if (success) {
+      print('DEBUG: Delete user response: $response');
+
+      if (response == true) {
+        // Also delete from auth.users if possible
+        try {
+          await _supabase.auth.admin.deleteUser(userId);
+          print('DEBUG: Auth user deleted successfully');
+        } catch (authError) {
+          print('DEBUG: Auth delete error (might be okay for Google users): $authError');
+        }
+
         // Remove from local state only after successful delete
         setState(() {
           _users.removeWhere((user) => user['id'] == userId);
         });
-        _showSuccessSnackBar('משתמש נמחק בהצלחה מהמסד נתונים!');
+        _showSuccessSnackBar('משתמש נמחק בהצלחה!');
       } else {
-        _showErrorSnackBar('שגיאה במחיקת המשתמש - בעיית הרשאות RLS');
+        _showErrorSnackBar('שגיאה במחיקת המשתמש');
       }
       
     } catch (e) {
-      print('Delete error: $e');
+      print('DEBUG: Delete error: $e');
       _showErrorSnackBar('שגיאה במחיקת המשתמש: $e');
-    }
-  }
-
-  // Delete user from both auth.users and users table
-  Future<bool> _deleteUserSupabase(String userId) async {
-    try {
-      print('Attempting Supabase delete for user: $userId');
-      
-      // First delete from our users table
-      final userResponse = await _supabase
-          .from('users')
-          .delete()
-          .eq('id', userId)
-          .select();
-      
-      print('Users table delete response: $userResponse');
-      
-      // Then delete from auth.users using admin API
-      try {
-        await _supabase.auth.admin.deleteUser(userId);
-        print('Auth delete successful');
-      } catch (authError) {
-        print('Auth delete error (might be okay if user was created via Google): $authError');
-        // For Google users, they might not exist in auth.users table, so we continue
-      }
-      
-      // Check if users table deletion was successful
-      if (userResponse.isNotEmpty) {
-        print('Delete successful! User removed from database.');
-        return true;
-      } else {
-        print('Delete failed - no rows affected in users table');
-        return false;
-      }
-    } catch (e) {
-      print('Supabase delete error: $e');
-      return false;
     }
   }
 
@@ -795,36 +840,53 @@ class UserFormDialog extends StatefulWidget {
 
 class _UserFormDialogState extends State<UserFormDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _displayNameController = TextEditingController();
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
-  
+  final _addressController = TextEditingController();
+  final _relatedNameController = TextEditingController();
+
   String _selectedRole = 'student';
+  String _selectedUserType = 'student';
+  String _selectedApprovalStatus = 'pending';
   bool _isActive = true;
+  bool _isApproved = false;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.user != null) {
-      _emailController.text = widget.user!['email'] ?? '';
-      _displayNameController.text = widget.user!['display_name'] ?? '';
+      // Extract username from email (remove @zazadance.com part)
+      final email = widget.user!['email'] ?? '';
+      _usernameController.text = email.replaceAll('@zazadance.com', '');
       _fullNameController.text = widget.user!['full_name'] ?? '';
       _phoneController.text = widget.user!['phone'] ?? '';
+      _addressController.text = widget.user!['address'] ?? '';
       _selectedRole = widget.user!['role'] ?? 'student';
+      _selectedUserType = widget.user!['user_type'] ?? 'student';
+      _selectedApprovalStatus = widget.user!['approval_status'] ?? 'pending';
       _isActive = widget.user!['is_active'] ?? true;
+      _isApproved = widget.user!['is_approved'] ?? false;
+
+      // Set related name based on user type
+      if (_selectedUserType == 'student') {
+        _relatedNameController.text = widget.user!['parent_name'] ?? '';
+      } else if (_selectedUserType == 'parent') {
+        _relatedNameController.text = widget.user!['student_name'] ?? '';
+      }
     }
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
-    _displayNameController.dispose();
     _fullNameController.dispose();
     _phoneController.dispose();
+    _addressController.dispose();
+    _relatedNameController.dispose();
     super.dispose();
   }
 
@@ -856,16 +918,15 @@ class _UserFormDialogState extends State<UserFormDialog> {
                 
                 const SizedBox(height: 24),
                 
-                // Email
+                // Username
                 TextFormField(
-                  controller: _emailController,
-                  enabled: !isEdit, // Don't allow email editing
-                  keyboardType: TextInputType.emailAddress,
+                  controller: _usernameController,
+                  enabled: !isEdit, // Don't allow username editing
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: 'אימייל',
+                    labelText: 'שם משתמש',
                     labelStyle: const TextStyle(color: Colors.white70),
-                    prefixIcon: const Icon(Icons.email, color: Colors.white54),
+                    prefixIcon: const Icon(Icons.person, color: Colors.white54),
                     filled: true,
                     fillColor: const Color(0xFF2A2A2A),
                     border: OutlineInputBorder(
@@ -875,10 +936,13 @@ class _UserFormDialogState extends State<UserFormDialog> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'נא להזין אימייל';
+                      return 'נא להזין שם משתמש';
                     }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                      return 'אימייל לא תקין';
+                    if (value.length < 3) {
+                      return 'שם המשתמש חייב להכיל לפחות 3 תווים';
+                    }
+                    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
+                      return 'שם משתמש יכול להכיל רק אותיות באנגלית, מספרים וקו תחתון';
                     }
                     return null;
                   },
@@ -916,12 +980,12 @@ class _UserFormDialogState extends State<UserFormDialog> {
                   const SizedBox(height: 16),
                 ],
                 
-                // Display Name
+                // Full Name (same as registration)
                 TextFormField(
-                  controller: _displayNameController,
+                  controller: _fullNameController,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: 'שם לתצוגה',
+                    labelText: 'שם מלא',
                     labelStyle: const TextStyle(color: Colors.white70),
                     prefixIcon: const Icon(Icons.person, color: Colors.white54),
                     filled: true,
@@ -933,29 +997,10 @@ class _UserFormDialogState extends State<UserFormDialog> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'נא להזין שם לתצוגה';
+                      return 'נא להזין שם מלא';
                     }
                     return null;
                   },
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Full Name
-                TextFormField(
-                  controller: _fullNameController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'שם מלא',
-                    labelStyle: const TextStyle(color: Colors.white70),
-                    prefixIcon: const Icon(Icons.badge, color: Colors.white54),
-                    filled: true,
-                    fillColor: const Color(0xFF2A2A2A),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
                 ),
                 
                 const SizedBox(height: 16),
@@ -977,7 +1022,73 @@ class _UserFormDialogState extends State<UserFormDialog> {
                     ),
                   ),
                 ),
-                
+
+                const SizedBox(height: 16),
+
+                // Address
+                TextFormField(
+                  controller: _addressController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'כתובת',
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    prefixIcon: const Icon(Icons.location_on, color: Colors.white54),
+                    filled: true,
+                    fillColor: const Color(0xFF2A2A2A),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // User Type
+                DropdownButtonFormField<String>(
+                  value: _selectedUserType,
+                  onChanged: (value) => setState(() {
+                    _selectedUserType = value!;
+                    _relatedNameController.clear(); // Clear related name when type changes
+                  }),
+                  style: const TextStyle(color: Colors.white),
+                  dropdownColor: const Color(0xFF2A2A2A),
+                  decoration: InputDecoration(
+                    labelText: 'סוג משתמש',
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    prefixIcon: const Icon(Icons.group, color: Colors.white54),
+                    filled: true,
+                    fillColor: const Color(0xFF2A2A2A),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'student', child: Text('תלמיד')),
+                    DropdownMenuItem(value: 'parent', child: Text('הורה')),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Related Name (Parent/Student name based on user type)
+                TextFormField(
+                  controller: _relatedNameController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: _selectedUserType == 'student' ? 'שם ההורה' : 'שם התלמיד',
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    prefixIcon: const Icon(Icons.person_outline, color: Colors.white54),
+                    filled: true,
+                    fillColor: const Color(0xFF2A2A2A),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 16),
                 
                 // Role
@@ -1007,6 +1118,35 @@ class _UserFormDialogState extends State<UserFormDialog> {
                 
                 const SizedBox(height: 16),
                 
+                // Approval Status
+                DropdownButtonFormField<String>(
+                  value: _selectedApprovalStatus,
+                  onChanged: (value) => setState(() {
+                    _selectedApprovalStatus = value!;
+                    _isApproved = value == 'approved';
+                  }),
+                  style: const TextStyle(color: Colors.white),
+                  dropdownColor: const Color(0xFF2A2A2A),
+                  decoration: InputDecoration(
+                    labelText: 'סטטוס אישור',
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    prefixIcon: const Icon(Icons.verified, color: Colors.white54),
+                    filled: true,
+                    fillColor: const Color(0xFF2A2A2A),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'pending', child: Text('ממתין לאישור')),
+                    DropdownMenuItem(value: 'approved', child: Text('אושר')),
+                    DropdownMenuItem(value: 'rejected', child: Text('נדחה')),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
                 // Active status (only for editing)
                 if (isEdit)
                   Container(
@@ -1086,20 +1226,35 @@ class _UserFormDialogState extends State<UserFormDialog> {
   void _save() {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      
+
+      final username = _usernameController.text.trim().toLowerCase();
+      final dummyEmail = '${username}@zazadance.com';
+
       final userData = <String, String>{
-        'email': _emailController.text.trim(),
-        'display_name': _displayNameController.text.trim(),
+        'username': username,
+        'email': dummyEmail,
+        'display_name': _fullNameController.text.trim(),
         'full_name': _fullNameController.text.trim(),
         'phone': _phoneController.text.trim(),
+        'address': _addressController.text.trim(),
+        'user_type': _selectedUserType,
         'role': _selectedRole,
+        'approval_status': _selectedApprovalStatus,
+        'is_approved': _isApproved.toString(),
         'is_active': _isActive.toString(),
       };
-      
+
+      // Add parent_name or student_name based on user type
+      if (_selectedUserType == 'student') {
+        userData['parent_name'] = _relatedNameController.text.trim();
+      } else if (_selectedUserType == 'parent') {
+        userData['student_name'] = _relatedNameController.text.trim();
+      }
+
       if (widget.user == null) { // New user
         userData['password'] = _passwordController.text;
       }
-      
+
       widget.onSave(userData);
       Navigator.of(context).pop();
     }

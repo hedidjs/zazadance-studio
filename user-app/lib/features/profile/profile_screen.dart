@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:go_router/go_router.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -62,21 +63,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final user = _supabase.auth.currentUser;
       if (user == null) return;
 
-      // טעינת פרופיל משתמש מהמסד
+      // טעינת פרופיל משתמש מטבלת users
       final response = await _supabase
-          .from('profiles')
+          .from('users')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('id', user.id)
           .single();
 
       if (mounted) {
         setState(() {
           _firstNameController.text = response['first_name'] ?? '';
           _lastNameController.text = response['last_name'] ?? '';
-          _emailController.text = user.email ?? '';
+          _emailController.text = response['email'] ?? user.email ?? '';
           _phoneController.text = response['phone'] ?? '';
           _bioController.text = response['bio'] ?? '';
-          _currentAvatarUrl = response['avatar_url'];
+          _currentAvatarUrl = response['profile_image_url'];
           _isLoading = false;
         });
       }
@@ -132,7 +133,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         final storageResponse = await _supabase.storage
             .from('avatars')
             .upload(fileName, _selectedImage!);
-            
+
         if (storageResponse.isNotEmpty) {
           avatarUrl = _supabase.storage
               .from('avatars')
@@ -140,16 +141,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         }
       }
 
-      // עדכון פרופיל במסד הנתונים
-      await _supabase.from('profiles').upsert({
-        'user_id': user.id,
+      // עדכון פרופיל בטבלת users
+      await _supabase.from('users').update({
         'first_name': _firstNameController.text,
         'last_name': _lastNameController.text,
         'phone': _phoneController.text,
         'bio': _bioController.text,
-        'avatar_url': avatarUrl,
+        'profile_image_url': avatarUrl,
         'updated_at': DateTime.now().toIso8601String(),
-      });
+      }).eq('id', user.id);
 
       if (mounted) {
         setState(() {
@@ -180,6 +180,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _deleteAccount() async {
+    print('DEBUG: _deleteAccount function called');
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -212,6 +213,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
 
     if (confirmed == true) {
+      print('DEBUG: First confirmation received');
       final doubleConfirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -244,21 +246,52 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       );
 
       if (doubleConfirmed == true) {
+        print('DEBUG: Second confirmation received, starting deletion process');
         try {
           setState(() {
             _isLoading = true;
           });
 
-          // מחיקת חשבון משתמש
-          
-          if (mounted) {
-            // ניווט לדף ההתחברות ומחיקת כל ההיסטוריה
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              '/login',
-              (route) => false,
-            );
+          final user = _supabase.auth.currentUser;
+          if (user == null) {
+            throw Exception('משתמש לא מחובר');
+          }
+
+          // מחיקת חשבון משתמש באמצעות RPC function
+          print('DEBUG: Starting account deletion for user: ${user.id}');
+
+          final response = await _supabase.rpc('delete_user_admin',
+            params: {'user_id': user.id}
+          );
+
+          print('DEBUG: Delete user RPC response: $response');
+          print('DEBUG: Response type: ${response.runtimeType}');
+
+          if (response == true) {
+            // גם מחיקה מ-auth.users אם אפשר
+            try {
+              await _supabase.auth.signOut();
+              print('DEBUG: User signed out successfully');
+            } catch (authError) {
+              print('DEBUG: Sign out error: $authError');
+            }
+
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('החשבון נמחק בהצלחה'),
+                  backgroundColor: Color(0xFF4CAF50),
+                ),
+              );
+
+              // ניווט לדף ההתחברות באמצעות GoRouter
+              context.go('/login');
+            }
+          } else {
+            throw Exception('מחיקת המשתמש נכשלה');
           }
         } catch (e) {
+          print('DEBUG: Delete account error: $e');
           if (mounted) {
             setState(() {
               _isLoading = false;

@@ -145,6 +145,7 @@ class _ProfileSimpleScreenState extends ConsumerState<ProfileSimpleScreen> {
   }
 
   Future<void> _deleteAccount() async {
+    print('DEBUG: _deleteAccount function called in ProfileSimpleScreen');
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -175,6 +176,8 @@ class _ProfileSimpleScreenState extends ConsumerState<ProfileSimpleScreen> {
         ],
       ),
     );
+
+    print('DEBUG: First confirmation: $confirmed');
 
     if (confirmed == true) {
       final doubleConfirmed = await showDialog<bool>(
@@ -208,40 +211,59 @@ class _ProfileSimpleScreenState extends ConsumerState<ProfileSimpleScreen> {
         ),
       );
 
+      print('DEBUG: Second confirmation: $doubleConfirmed');
+
       if (doubleConfirmed == true) {
         try {
           setState(() {
             _isUpdating = true;
           });
 
-          // מחיקת חשבון משתמש
-          
-          if (mounted) {
-            // ניקוי מצב האפליקציה
-            setState(() {
-              _isUpdating = false;
-            });
-            
-            // המתנה קצרה לוודא שה-signOut הושלם
-            await Future.delayed(const Duration(milliseconds: 500));
-            
-            // מעבר מיידי לדף התחברות עם ניקוי מלא של המחסנית
-            context.go('/login');
-            
-            // הצגת הודעת הצלחה
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('החשבון נמחק בהצלחה'),
-                backgroundColor: Colors.green,
-              ),
-            );
+          final user = _supabase.auth.currentUser;
+          if (user == null) {
+            throw Exception('משתמש לא מחובר');
+          }
+
+          // מחיקת חשבון משתמש באמצעות RPC function
+          print('DEBUG: Starting account deletion for user: ${user.id}');
+
+          final response = await _supabase.rpc('delete_user_admin',
+            params: {'user_id': user.id}
+          );
+
+          print('DEBUG: Delete user RPC response: $response');
+          print('DEBUG: Response type: ${response.runtimeType}');
+
+          if (response == true) {
+            // גם מחיקה מ-auth.users אם אפשר
+            try {
+              await _supabase.auth.signOut();
+              print('DEBUG: User signed out successfully');
+            } catch (authError) {
+              print('DEBUG: Sign out error: $authError');
+            }
+
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('החשבון נמחק בהצלחה'),
+                  backgroundColor: Color(0xFF4CAF50),
+                ),
+              );
+
+              // ניווט לדף ההתחברות באמצעות GoRouter
+              context.go('/login');
+            }
+          } else {
+            throw Exception('מחיקת המשתמש נכשלה');
           }
         } catch (e) {
+          print('DEBUG: Delete account error: $e');
           if (mounted) {
             setState(() {
               _isUpdating = false;
             });
-            
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('שגיאה במחיקת החשבון: $e'),
@@ -653,7 +675,7 @@ class _ProfileSimpleScreenState extends ConsumerState<ProfileSimpleScreen> {
         // העלאת התמונה לstorage
         final fileName = 'profile_${user.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final uploadPath = await _supabase.storage
-            .from('profiles')
+            .from('avatars')
             .uploadBinary(
               fileName,
               bytes,
@@ -665,7 +687,7 @@ class _ProfileSimpleScreenState extends ConsumerState<ProfileSimpleScreen> {
 
         // קבלת URL של התמונה
         final imageUrl = _supabase.storage
-            .from('profiles')
+            .from('avatars')
             .getPublicUrl(fileName);
 
         setState(() {

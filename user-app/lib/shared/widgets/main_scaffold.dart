@@ -51,7 +51,9 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
             .select('full_name, profile_image_url, email')
             .eq('id', user.id)
             .maybeSingle();
-        
+
+        print('DEBUG: MainScaffold user profile response: $response');
+
         if (mounted) {
           setState(() {
             _userProfile = response ?? {
@@ -61,8 +63,12 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
             };
             _isLoading = false;
           });
+
+          print('DEBUG: MainScaffold final profile: $_userProfile');
+          print('DEBUG: MainScaffold profile image URL: ${_userProfile?['profile_image_url']}');
         }
       } catch (e) {
+        print('DEBUG: MainScaffold load profile error: $e');
         if (mounted) {
           setState(() {
             _userProfile = {
@@ -212,9 +218,9 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                // אימייל המשתמש
+                // שם המשתמש (רק החלק שלפני ה-@)
                 Text(
-                  _userProfile?['email'] ?? '',
+                  _userProfile?['email']?.split('@')[0] ?? '',
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 14,
@@ -478,8 +484,8 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
             onPressed: () async {
               Navigator.pop(context);
               try {
-                // התנתקות מGoogle Sign-In ומSupabase
-                // התנתקות מהמערכת
+                // התנתקות מSupabase
+                await Supabase.instance.client.auth.signOut();
                 
                 // ניווט לעמוד ההתחברות וניקוי כל ההיסטוריה
                 if (context.mounted) {

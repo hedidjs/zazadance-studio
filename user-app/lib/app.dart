@@ -51,10 +51,48 @@ class AppRouter {
         return '/login';
       }
       
-      // אם המשתמש מחובר ובדף התחברות/הרשמה - הפנה לעמוד הבית
-      if (isLoggedIn && (isLoggingIn || isRegistering)) {
-        print('DEBUG: Redirecting to home because user is logged in on auth page');
-        return '/';
+      // אם המשתמש מחובר - בודק אם הוא מאושר
+      if (isLoggedIn) {
+        // אם בדף התחברות/הרשמה וכבר מחובר - בדוק אישור
+        if (isLoggingIn || isRegistering) {
+          final isApprovedAsync = ref.watch(isUserApprovedProvider);
+          return isApprovedAsync.when(
+            data: (isApproved) {
+              if (isApproved) {
+                print('DEBUG: User is approved, redirecting to home');
+                return '/';
+              } else {
+                print('DEBUG: User not approved, staying on auth page');
+                return null; // הישאר בדף הנוכחי
+              }
+            },
+            loading: () {
+              print('DEBUG: Loading approval status...');
+              return null; // הישאר בדף הנוכחי בזמן הטעינה
+            },
+            error: (error, stack) {
+              print('DEBUG: Error checking approval: $error');
+              return '/login'; // במקרה של שגיאה, חזור ללוגין
+            },
+          );
+        }
+        
+        // אם לא בדף auth - בדוק אישור לפני גישה לאפליקציה
+        final isApprovedAsync = ref.watch(isUserApprovedProvider);
+        return isApprovedAsync.when(
+          data: (isApproved) {
+            if (!isApproved) {
+              print('DEBUG: User not approved, redirecting to login');
+              return '/login';
+            }
+            return null; // המשתמש מאושר, המשך כרגיל
+          },
+          loading: () => null, // הישאר בדף הנוכחי בזמן הטעינה
+          error: (error, stack) {
+            print('DEBUG: Error checking approval: $error');
+            return '/login';
+          },
+        );
       }
       
       return null;

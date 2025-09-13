@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import '../../providers/app_config_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -28,7 +30,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String? _selectedUserType;
-  File? _profileImage;
+  XFile? _profileImage;
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -54,7 +56,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       
       if (image != null) {
         setState(() {
-          _profileImage = File(image.path);
+          _profileImage = image;
         });
       }
     } catch (e) {
@@ -69,9 +71,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       final fileExtension = _profileImage!.path.split('.').last;
       final fileName = '${userId}_profile.$fileExtension';
       
+      final imageBytes = await _profileImage!.readAsBytes();
       await _supabase.storage
           .from('avatars')
-          .upload(fileName, _profileImage!);
+          .uploadBinary(fileName, imageBytes);
       
       final imageUrl = _supabase.storage
           .from('avatars')
@@ -99,7 +102,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     try {
       final username = _usernameController.text.trim().toLowerCase();
-      final dummyEmail = '${username}@zazadance.studio';
+      final dummyEmail = '${username}@zazadance.com';
 
       // בדיקה אם שם המשתמש כבר קיים
       final existingUser = await _supabase
@@ -135,11 +138,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       );
 
       if (response.user != null) {
-        // העלאת תמונת פרופיל אם נבחרה
-        String? profileImageUrl = await _uploadProfileImage(response.user!.id);
+        // הודעת הצלחה ראשונה
+        print('*** REGISTRATION SUCCESS MESSAGE TEST ***');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('נרשמת בהצלחה! בקשתך נשלחה לאישור האדמין'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 5),
+          ),
+        );
+
+        // העלאת תמונת פרופיל אם נבחרה (עם טיפול בשגיאות)
+        String? profileImageUrl;
+        try {
+          profileImageUrl = await _uploadProfileImage(response.user!.id);
+        } catch (e) {
+          print('Error uploading profile image: $e');
+          // ממשיכים גם עם שגיאה בתמונה
+        }
 
         // יצירת רשומה בטבלת users עם מערכת האישור
-        await _supabase.from('users').insert({
+        final userData = {
           'id': response.user!.id,
           'username': username,
           'email': dummyEmail,
@@ -147,22 +166,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           'full_name': _fullNameController.text.trim(),
           'phone': _phoneController.text.trim(),
           'address': _addressController.text.trim(),
-          'user_type': _selectedUserType!,
+          'user_type': _selectedUserType!, // parent או student
           'parent_name': _selectedUserType == 'student' ? _relatedNameController.text.trim() : null,
           'student_name': _selectedUserType == 'parent' ? _relatedNameController.text.trim() : null,
           'profile_image_url': profileImageUrl,
-          'avatar_url': profileImageUrl,
-          'role': 'student', // התחל עם role בסיסי
+          'role': _selectedUserType!, // התחל עם אותו role כמו user_type
           'is_approved': false,
           'approval_status': 'pending',
           'is_active': false,
-        });
-
-        // התנתקות מהמשתמש כיון שהוא עדיין לא מאושר
-        await _supabase.auth.signOut();
-
+        };
+        print('INSERTING USER DATA: $userData');
+        
+        final insertResult = await _supabase.from('users').insert(userData);
+        print('INSERT RESULT: $insertResult');
+        
         if (mounted) {
-          _showPendingApprovalBottomSheet();
+          await Future.delayed(const Duration(seconds: 2));
+          await _supabase.auth.signOut();
         }
       }
     } on AuthException catch (error) {
@@ -170,8 +190,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         _showErrorSnackBar(error.message);
       }
     } catch (error) {
+      print('REGISTRATION ERROR: $error');
+      print('ERROR TYPE: ${error.runtimeType}');
       if (mounted) {
-        _showErrorSnackBar('שגיאה לא צפויה: $error');
+        _showErrorSnackBar('Database error saving new user: $error');
       }
     } finally {
       if (mounted) {
@@ -399,6 +421,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   void _showPendingApprovalBottomSheet() {
+    print('DEBUG: _showPendingApprovalBottomSheet called');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -556,6 +579,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
   }
 
+  Future<Uint8List> _getImageBytes() async {
+    // XFile תומך ב-readAsBytes() גם ב-Web וגם ב-Mobile
+    return await _profileImage!.readAsBytes();
+  }
+
   @override
   Widget build(BuildContext context) {
     final appConfig = ref.watch(appConfigProvider);
@@ -633,11 +661,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         child: _profileImage != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(58),
-                                child: Image.file(
-                                  _profileImage!,
-                                  width: 116,
-                                  height: 116,
-                                  fit: BoxFit.cover,
+                                child: FutureBuilder<Uint8List>(
+                                  future: _getImageBytes(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.hasData) {
+                                      return Image.memory(
+                                        snapshot.data!,
+                                        width: 116,
+                                        height: 116,
+                                        fit: BoxFit.cover,
+                                      );
+                                    }
+                                    return const CircularProgressIndicator();
+                                  },
                                 ),
                               )
                             : const Column(

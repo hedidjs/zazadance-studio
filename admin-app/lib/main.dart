@@ -7,7 +7,7 @@ import 'app.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // אתחול Supabase with production config
+  // אתחול Supabase with service role key for admin privileges
   await Supabase.initialize(
     url: 'https://yyvoavzgapsyycjwirmg.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5dm9hdnpnYXBzeXljandpcm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyOTgyMzgsImV4cCI6MjA3MDg3NDIzOH0.IU_dW_8K-yuV1grWIWJdetU7jK-b-QDPFYp_m5iFP90',

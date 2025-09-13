@@ -29,7 +29,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
       
       final response = await _supabase
           .from('users')
-          .select('id, email, display_name, full_name, role, phone, is_active, created_at, profile_image_url')
+          .select('id, email, display_name, full_name, role, phone, address, user_type, parent_name, student_name, approval_status, is_active, created_at, profile_image_url')
           .order('created_at', ascending: false);
 
       setState(() {
@@ -358,8 +358,14 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           'display_name': userData['display_name'],
           'full_name': userData['full_name'],
           'phone': userData['phone'],
+          'address': userData['address'],
+          'user_type': userData['user_type'],
+          'parent_name': userData['parent_name'],
+          'student_name': userData['student_name'],
           'role': userData['role'],
-          'is_active': true,
+          'approval_status': userData['approval_status'],
+          'is_active': userData['approval_status'] == 'approved',
+          'is_approved': userData['approval_status'] == 'approved',
           'created_at': DateTime.now().toIso8601String(),
           'updated_at': DateTime.now().toIso8601String(),
         });
@@ -378,8 +384,14 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
         'display_name': userData['display_name'],
         'full_name': userData['full_name'],
         'phone': userData['phone'],
+        'address': userData['address'],
+        'user_type': userData['user_type'],
+        'parent_name': userData['parent_name'],
+        'student_name': userData['student_name'],
         'role': userData['role'],
+        'approval_status': userData['approval_status'],
         'is_active': userData['is_active'] == 'true',
+        'is_approved': userData['approval_status'] == 'approved',
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', userId);
 
@@ -448,8 +460,12 @@ class _UserFormDialogState extends State<UserFormDialog> {
   final _displayNameController = TextEditingController();
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
-  
+  final _addressController = TextEditingController();
+  final _relatedNameController = TextEditingController();
+
   String _selectedRole = 'student';
+  String _selectedUserType = 'student';
+  String _selectedApprovalStatus = 'pending';
   bool _isActive = true;
   bool _isLoading = false;
 
@@ -461,8 +477,18 @@ class _UserFormDialogState extends State<UserFormDialog> {
       _displayNameController.text = widget.user!['display_name'] ?? '';
       _fullNameController.text = widget.user!['full_name'] ?? '';
       _phoneController.text = widget.user!['phone'] ?? '';
+      _addressController.text = widget.user!['address'] ?? '';
       _selectedRole = widget.user!['role'] ?? 'student';
+      _selectedUserType = widget.user!['user_type'] ?? 'student';
+      _selectedApprovalStatus = widget.user!['approval_status'] ?? 'pending';
       _isActive = widget.user!['is_active'] ?? true;
+
+      // טעינת שם קשור (הורה או תלמיד)
+      if (_selectedUserType == 'student') {
+        _relatedNameController.text = widget.user!['parent_name'] ?? '';
+      } else {
+        _relatedNameController.text = widget.user!['student_name'] ?? '';
+      }
     }
   }
 
@@ -473,6 +499,8 @@ class _UserFormDialogState extends State<UserFormDialog> {
     _displayNameController.dispose();
     _fullNameController.dispose();
     _phoneController.dispose();
+    _addressController.dispose();
+    _relatedNameController.dispose();
     super.dispose();
   }
 
@@ -609,9 +637,76 @@ class _UserFormDialogState extends State<UserFormDialog> {
                     border: OutlineInputBorder(),
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
+                // Address
+                TextFormField(
+                  controller: _addressController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: 'כתובת מגורים',
+                    labelStyle: TextStyle(color: Colors.white70),
+                    prefixIcon: Icon(Icons.home, color: Colors.white54),
+                    filled: true,
+                    fillColor: Color(0xFF2A2A2A),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'נא להזין כתובת מגורים';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                // User Type (parent/student)
+                DropdownButtonFormField<String>(
+                  value: _selectedUserType,
+                  onChanged: (value) => setState(() {
+                    _selectedUserType = value!;
+                    _selectedRole = value; // סנכרון עם role
+                    _relatedNameController.clear(); // ניקוי שדה הקשור
+                  }),
+                  style: const TextStyle(color: Colors.white),
+                  dropdownColor: const Color(0xFF2A2A2A),
+                  decoration: const InputDecoration(
+                    labelText: 'סוג משתמש',
+                    labelStyle: TextStyle(color: Colors.white70),
+                    prefixIcon: Icon(Icons.group, color: Colors.white54),
+                    filled: true,
+                    fillColor: Color(0xFF2A2A2A),
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'student', child: Text('תלמיד/ה')),
+                    DropdownMenuItem(value: 'parent', child: Text('הורה')),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Related Name (parent for student, student for parent)
+                TextFormField(
+                  controller: _relatedNameController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: _selectedUserType == 'student' ? 'שם ההורה' : 'שם התלמיד/ה',
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    prefixIcon: Icon(
+                      _selectedUserType == 'student' ? Icons.family_restroom : Icons.school,
+                      color: Colors.white54,
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFF2A2A2A),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
                 // Role
                 DropdownButtonFormField<String>(
                   value: _selectedRole,
@@ -633,9 +728,38 @@ class _UserFormDialogState extends State<UserFormDialog> {
                     DropdownMenuItem(value: 'admin', child: Text('מנהל')),
                   ],
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
+                // Approval Status
+                DropdownButtonFormField<String>(
+                  value: _selectedApprovalStatus,
+                  onChanged: (value) => setState(() {
+                    _selectedApprovalStatus = value!;
+                    // אם מאושר, גם מפעיל
+                    if (value == 'approved') {
+                      _isActive = true;
+                    }
+                  }),
+                  style: const TextStyle(color: Colors.white),
+                  dropdownColor: const Color(0xFF2A2A2A),
+                  decoration: const InputDecoration(
+                    labelText: 'סטטוס אישור',
+                    labelStyle: TextStyle(color: Colors.white70),
+                    prefixIcon: Icon(Icons.check_circle, color: Colors.white54),
+                    filled: true,
+                    fillColor: Color(0xFF2A2A2A),
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'pending', child: Text('ממתין לאישור')),
+                    DropdownMenuItem(value: 'approved', child: Text('מאושר')),
+                    DropdownMenuItem(value: 'rejected', child: Text('נדחה')),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
                 // Active status (only for editing)
                 if (isEdit)
                   SwitchListTile(
@@ -695,16 +819,28 @@ class _UserFormDialogState extends State<UserFormDialog> {
   void _save() {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      
+
       final userData = {
         'email': _emailController.text.trim(),
         'display_name': _displayNameController.text.trim(),
         'full_name': _fullNameController.text.trim(),
         'phone': _phoneController.text.trim(),
+        'address': _addressController.text.trim(),
+        'user_type': _selectedUserType,
         'role': _selectedRole,
+        'approval_status': _selectedApprovalStatus,
         'is_active': _isActive.toString(),
       };
-      
+
+      // הוספת שם קשור בהתאם לתפקיד
+      if (_selectedUserType == 'student') {
+        userData['parent_name'] = _relatedNameController.text.trim();
+        userData['student_name'] = null;
+      } else {
+        userData['student_name'] = _relatedNameController.text.trim();
+        userData['parent_name'] = null;
+      }
+
       if (widget.user == null) { // New user
         userData['password'] = _passwordController.text;
       }

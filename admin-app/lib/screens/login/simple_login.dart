@@ -90,35 +90,17 @@ class _SimpleLoginScreenState extends State<SimpleLoginScreen> {
                   onPressed: _isLoading ? null : () async {
                     if (_passwordController.text == 'Sharon6263') {
                       setState(() => _isLoading = true);
-                      try {
-                        // Login to Supabase as admin
-                        await _supabase.auth.signInWithPassword(
-                          email: 'dev@zazadance.com',
-                          password: 'admin123',
-                        );
-                        context.go('/dashboard');
-                      } catch (e) {
-                        print('Supabase auth error: $e');
-                        // If Supabase auth fails due to RLS issues, proceed anyway
-                        // since we've verified the admin password
-                        if (e.toString().contains('Database error querying schema') ||
-                            e.toString().contains('500')) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('כניסה בלי אימות מלא (בעיית RLS)'),
-                              backgroundColor: Colors.orange,
-                            ),
-                          );
-                          context.go('/dashboard');
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('שגיאה בכניסה: $e'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      }
+                      
+                      // For now, just proceed to dashboard after password verification
+                      // TODO: Add proper Supabase auth later
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('כניסה למערכת הניהול'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                      context.go('/updates');
+                      
                       setState(() => _isLoading = false);
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(

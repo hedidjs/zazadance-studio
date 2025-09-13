@@ -8,7 +8,6 @@
 
 import 'package:app_links_web/app_links_web.dart';
 import 'package:flutter_inappwebview_web/web/main.dart';
-import 'package:google_sign_in_web/google_sign_in_web.dart';
 import 'package:image_picker_for_web/image_picker_for_web.dart';
 import 'package:share_plus/src/share_plus_web.dart';
 import 'package:shared_preferences_web/shared_preferences_web.dart';
@@ -19,7 +18,6 @@ void registerPlugins([final Registrar? pluginRegistrar]) {
   final Registrar registrar = pluginRegistrar ?? webPluginRegistrar;
   AppLinksPluginWeb.registerWith(registrar);
   InAppWebViewFlutterPlugin.registerWith(registrar);
-  GoogleSignInPlugin.registerWith(registrar);
   ImagePickerPlugin.registerWith(registrar);
   SharePlusWebPlugin.registerWith(registrar);
   SharedPreferencesPlugin.registerWith(registrar);

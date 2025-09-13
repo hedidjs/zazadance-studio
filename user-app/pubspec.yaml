@@ -24,8 +24,7 @@ dependencies:
   # Backend & Database
   supabase_flutter: ^2.8.0
   
-  # Authentication
-  google_sign_in: ^6.2.1
+  # Authentication - Google Sign-In removed
   
   # Navigation
   go_router: ^14.6.2

@@ -23,21 +23,28 @@ class _UserRequestsScreenState extends ConsumerState<UserRequestsScreen> {
   }
 
   Future<void> _loadPendingRequests() async {
+    print('DEBUG: Starting to load pending requests using RPC function');
+    print('DEBUG: Current user: ${_supabase.auth.currentUser?.id}');
     setState(() {
       _isLoading = true;
     });
 
     try {
+      print('DEBUG: Calling get_pending_users_admin RPC function...');
+      
+      // Use RPC function to bypass RLS
       final response = await _supabase
-          .from('users')
-          .select('*')
-          .eq('approval_status', 'pending')
-          .order('requested_at', ascending: false);
-
+          .rpc('get_pending_users_admin');
+      
+      print('DEBUG: RPC response: $response');
+      print('DEBUG: Found ${response.length} pending users');
+      
       setState(() {
         _pendingRequests = List<Map<String, dynamic>>.from(response);
       });
     } catch (e) {
+      print('DEBUG: Error loading requests: $e');
+      
       if (mounted) {
         _showErrorSnackBar('שגיאה בטעינת בקשות: $e');
       }
@@ -50,13 +57,14 @@ class _UserRequestsScreenState extends ConsumerState<UserRequestsScreen> {
 
   Future<void> _approveUser(String userId, Map<String, dynamic> userData) async {
     try {
-      await _supabase.from('users').update({
-        'is_approved': true,
-        'approval_status': 'approved',
-        'approved_at': DateTime.now().toIso8601String(),
-        'approved_by': _supabase.auth.currentUser?.id,
-        'is_active': true,
-      }).eq('id', userId);
+      print('DEBUG: Approving user $userId');
+      
+      // Use RPC function to bypass RLS
+      final response = await _supabase.rpc('approve_user_admin', 
+        params: {'user_id': userId}
+      );
+      
+      print('DEBUG: Approve user response: $response');
 
       // הסרת הבקשה מהרשימה
       setState(() {
@@ -65,26 +73,32 @@ class _UserRequestsScreenState extends ConsumerState<UserRequestsScreen> {
 
       _showSuccessSnackBar('המשתמש ${userData['full_name']} אושר בהצלחה!');
     } catch (e) {
+      print('DEBUG: Error approving user: $e');
       _showErrorSnackBar('שגיאה באישור המשתמש: $e');
     }
   }
 
   Future<void> _rejectUser(String userId, Map<String, dynamic> userData) async {
     try {
-      await _supabase.from('users').update({
-        'approval_status': 'rejected',
-        'approved_at': DateTime.now().toIso8601String(),
-        'approved_by': _supabase.auth.currentUser?.id,
-      }).eq('id', userId);
+      print('DEBUG: Starting to reject user $userId');
+      
+      // מחיקה מטבלת users
+      await _supabase.from('users').delete().eq('id', userId);
+      print('DEBUG: Deleted user from users table');
+      
+      // מחיקה מטבלת auth.users באמצעות admin API
+      await _supabase.auth.admin.deleteUser(userId);
+      print('DEBUG: Deleted user from auth.users table');
 
       // הסרת הבקשה מהרשימה
       setState(() {
         _pendingRequests.removeWhere((request) => request['id'] == userId);
       });
 
-      _showSuccessSnackBar('בקשת ${userData['full_name']} נדחתה');
+      _showSuccessSnackBar('המשתמש ${userData['full_name']} נמחק מהמערכת');
     } catch (e) {
-      _showErrorSnackBar('שגיאה בדחיית הבקשה: $e');
+      print('DEBUG: Error rejecting user: $e');
+      _showErrorSnackBar('שגיאה במחיקת המשתמש: $e');
     }
   }
 

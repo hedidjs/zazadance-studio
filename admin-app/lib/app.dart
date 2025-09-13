@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/login/simple_login.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/tutorials/tutorials_management_screen.dart';
@@ -20,7 +21,12 @@ import 'shared/layouts/admin_layout.dart';
 
 class AdminRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: '/updates',
+    initialLocation: '/login',
+    redirect: (context, state) {
+      // For now, allow all access - we'll add proper auth later
+      // TODO: Add session management for admin auth
+      return null;
+    },
     routes: [
       // Login route
       GoRoute(

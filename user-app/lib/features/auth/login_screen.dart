@@ -62,13 +62,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
       // חיפוש האימייל לפי שם המשתמש
       final userQuery = await _supabase
           .from('users')
-          .select('email, is_approved')
+          .select('email, is_approved, is_active, approval_status')
           .eq('username', _usernameController.text.trim())
           .maybeSingle();
 
       if (userQuery == null) {
         if (mounted) {
           _showErrorSnackBar('שם משתמש לא נמצא');
+        }
+        return;
+      }
+
+      // בדיקה אם המשתמש פעיל (לא נמחק)
+      if (userQuery['is_active'] != true || userQuery['approval_status'] == 'rejected') {
+        if (mounted) {
+          _showErrorSnackBar('החשבון הזה אינו פעיל יותר');
         }
         return;
       }
